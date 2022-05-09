@@ -135,11 +135,46 @@ double edgeTime(HoverLocation& i, HoverLocation& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) / V_MAX;
 }
 
+double edgeTime(UAV_Stop& i, UAV_Stop& j) {
+	return distAtoB(i.fX, i.fY, j.fX, j.fY) / V_MAX;
+}
+
+//double tourDuration(std::list<UAV_Stop> &tour) {
+//	double duration = 0;
+//
+//	if(tour.size() > 1) {
+//		std::list<UAV_Stop>::iterator lst, nxt;
+//		lst = tour.begin();
+//		nxt = tour.begin();
+//		nxt++;
+//
+//		// Run through the tour, add up distance from stop-to-stop
+//		while(nxt != tour.end()) {
+//			// Add time to move from lst to nxt
+//			duration += edgeTime(*lst, *nxt);
+//			// Add in time to talk to each sensor at nxt
+//			for(int s : nxt->nodes) {
+//
+//			}
+//
+//			// Advance iterators
+//			lst++;
+//			nxt++;
+//		}
+//	}
+//
+////	printf(" * total distance %f\n", dist);
+//	return dist;
+//}
+
 // TODO: These \/ \/
 double sensorTime(HoverLocation& i, Node& l) {
 	return 2;
 }
 
+double sensorTime(UAV_Stop& i, Node& l) {
+	return 2;
+}
 double edgeCost(HoverLocation& i, HoverLocation& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) * 0.1;
 }
@@ -819,6 +854,54 @@ void findRadiusPaths(Graph* G) {
 		exit(1);
 	}
 
+	// Print Results before improvements
+	{
+		// Print results to file
+		FILE * pOutputFile;
+		char buff[100];
+		sprintf(buff, DATA_LOG_LOCATION, ALGORITHM);
+		printf("%s\n", buff);
+		pOutputFile = fopen(buff, "a");
+
+		printf("\nFound tour:\n");
+		int i = 0;
+		double total_duration = 0;
+		for(std::list<UAV_Stop> l : vTours) {
+			double duration = 0;
+			if(l.size() > 1) {
+				std::list<UAV_Stop>::iterator lst, nxt;
+				lst = l.begin();
+				nxt = l.begin();
+				nxt++;
+
+				// Run through the tour, add up distance from stop-to-stop
+				while(nxt != l.end()) {
+					// Add time to move from lst to nxt
+					duration += edgeTime(*lst, *nxt);
+					// Add in time to talk to each sensor at nxt
+					for(int s : nxt->nodes) {
+						duration += sensorTime(*nxt, G->vNodeLst.at(s));
+					}
+
+					// Advance iterators
+					lst++;
+					nxt++;
+				}
+			}
+			printf("%d: duration = %f\n ", i, duration);
+			total_duration += duration;
+			for(UAV_Stop n : l) {
+				printf("(%f, %f) ", n.fX, n.fY);
+			}
+			printf("\n");
+			i++;
+		}
+		printf("Total duration = %f\n ", total_duration);
+		fprintf(pOutputFile, "%ld %f\n", G->vNodeLst.size(), total_duration);
+
+		fclose(pOutputFile);
+	}
+
 
 	/// 4. Improve route
 	printf("\nImprove route\n");
@@ -1000,25 +1083,45 @@ void findRadiusPaths(Graph* G) {
 		// Print results to file
 		FILE * pOutputFile;
 		char buff[100];
-		sprintf(buff, DATA_LOG_LOCATION, ALGORITHM);
+		sprintf(buff, DATA_LOG_LOCATION, ALGORITHM + 1);
 		printf("%s\n", buff);
 		pOutputFile = fopen(buff, "a");
 
 		printf("\nImproved tour:\n");
 		int i = 0;
-		double total_dist = 0;
+		double total_duration = 0;
 		for(std::list<UAV_Stop> l : vTours) {
-			double dist = tourDist(l);
-			printf("%d: dist = %f\n ", i, dist);
-			total_dist += dist;
+			double duration = 0;
+			if(l.size() > 1) {
+				std::list<UAV_Stop>::iterator lst, nxt;
+				lst = l.begin();
+				nxt = l.begin();
+				nxt++;
+
+				// Run through the tour, add up distance from stop-to-stop
+				while(nxt != l.end()) {
+					// Add time to move from lst to nxt
+					duration += edgeTime(*lst, *nxt);
+					// Add in time to talk to each sensor at nxt
+					for(int s : nxt->nodes) {
+						duration += sensorTime(*nxt, G->vNodeLst.at(s));
+					}
+
+					// Advance iterators
+					lst++;
+					nxt++;
+				}
+			}
+			printf("%d: duration = %f\n ", i, duration);
+			total_duration += duration;
 			for(UAV_Stop n : l) {
 				printf("(%f, %f) ", n.fX, n.fY);
 			}
 			printf("\n");
 			i++;
 		}
-		printf("Total dist = %f\n ", total_dist);
-		fprintf(pOutputFile, "%ld %f", G->vNodeLst.size(), total_dist);
+		printf("Total duration = %f\n ", total_duration);
+		fprintf(pOutputFile, "%ld %f\n", G->vNodeLst.size(), total_duration);
 
 		fclose(pOutputFile);
 	}
