@@ -22,8 +22,16 @@
 // TODO: Determine UAV energy budget
 #define Q				10
 #define I_HAT			6
+#define INF				1000000000000
+
+
+#define PRINT_RESULTS		false
 #define DATA_LOG_LOCATION	"Output/alg_%d.dat"
-#define ALGORITHM			1
+
+// Algorithm types, should be odd numbers
+#define MILP			1
+#define GREEDY_NN		3
+#define ALGORITHM		GREEDY_NN
 
 struct pNode {
 	int nID;
@@ -139,34 +147,6 @@ double edgeTime(UAV_Stop& i, UAV_Stop& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) / V_MAX;
 }
 
-//double tourDuration(std::list<UAV_Stop> &tour) {
-//	double duration = 0;
-//
-//	if(tour.size() > 1) {
-//		std::list<UAV_Stop>::iterator lst, nxt;
-//		lst = tour.begin();
-//		nxt = tour.begin();
-//		nxt++;
-//
-//		// Run through the tour, add up distance from stop-to-stop
-//		while(nxt != tour.end()) {
-//			// Add time to move from lst to nxt
-//			duration += edgeTime(*lst, *nxt);
-//			// Add in time to talk to each sensor at nxt
-//			for(int s : nxt->nodes) {
-//
-//			}
-//
-//			// Advance iterators
-//			lst++;
-//			nxt++;
-//		}
-//	}
-//
-////	printf(" * total distance %f\n", dist);
-//	return dist;
-//}
-
 // TODO: These \/ \/
 double sensorTime(HoverLocation& i, Node& l) {
 	return 2;
@@ -175,11 +155,19 @@ double sensorTime(HoverLocation& i, Node& l) {
 double sensorTime(UAV_Stop& i, Node& l) {
 	return 2;
 }
+// TODO: This is not correct!!
 double edgeCost(HoverLocation& i, HoverLocation& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) * 0.1;
 }
 
 double sensorCost(HoverLocation& i, Node& l) {
+	return 1;
+}
+double edgeCost(UAV_Stop& i, UAV_Stop& j) {
+	return distAtoB(i.fX, i.fY, j.fX, j.fY) * 0.1;
+}
+
+double sensorCost(UAV_Stop& i, Node& l) {
 	return 1;
 }
 
@@ -460,402 +448,561 @@ void findRadiusPaths(Graph* G) {
 		vHLPerS.push_back(hlList);
 	}
 
-
 	// Lists for each found tour
 	std::vector<std::list<UAV_Stop>> vTours;
 
+
 	/// 3. Solve capacitated VRP
-	unsigned long int M = 10;
+	if(ALGORITHM == MILP) {
+		unsigned long int M = 10;
 
-	try {
-		// Create Gurobi environment
-		GRBEnv env;
-		GRBModel model = GRBModel(&env);
+		try {
+			// Create Gurobi environment
+			GRBEnv env;
+			GRBModel model = GRBModel(&env);
 
-		/*
-		 * Sets:
-		 * i,j in H, set of hovering locations, |H|=N
-		 * l in S, set of sensors, |S|=L
-		 * k in K, set of tours (or vehicles), |K|=M
-		 * l in S_i, indexed set of sensors in-range of hovering location i
-		 * i in H_l, indexed set of hovering locations in-range of sensor l
-		 */
+			/*
+			 * Sets:
+			 * i,j in H, set of hovering locations, |H|=N
+			 * l in S, set of sensors, |S|=L
+			 * k in K, set of tours (or vehicles), |K|=M
+			 * l in S_i, indexed set of sensors in-range of hovering location i
+			 * i in H_l, indexed set of hovering locations in-range of sensor l
+			 */
 
-		unsigned long int N = vPotentialHL.size();
-		unsigned long int L = G->vNodeLst.size();
+			unsigned long int N = vPotentialHL.size();
+			unsigned long int L = G->vNodeLst.size();
 
-		/// Define variables
-		// Tracks edges between HLs
-		GRBVar*** X = new GRBVar**[M];
-		for(unsigned long int k = 0; k < M; k++) {
-			X[k] = new GRBVar*[N];
-			for(unsigned long int i = 0; i < N; i++) {
-				X[k][i] = new GRBVar[N];
-				for(unsigned long int j = 0; j < N; j++) {
-					X[k][i][j] = model.addVar(0.0, 1.0, edgeTime(vPotentialHL.at(i), vPotentialHL.at(j)),
-							GRB_BINARY, "X_"+itos(k)+"_"+itos(i)+"_"+itos(j));
-				}
-			}
-		}
-
-		// Tracks when we talk to each sensor
-		GRBVar*** Y = new GRBVar**[M];
-		for(unsigned long int k = 0; k < M; k++) {
-			Y[k] = new GRBVar*[N];
-			for(unsigned long int i = 0; i < N; i++) {
-				Y[k][i] = new GRBVar[L];
-			}
-		}
-
-		// Create the indexed variables
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				for(int l : vSPerHL.at(i)) {
-					Y[k][i][l] = model.addVar(0.0, 1.0, sensorTime(vPotentialHL.at(i), G->vNodeLst.at(l)),
-							GRB_BINARY, "Y_"+itos(k)+"_"+itos(i)+"_"+itos(l));
-				}
-			}
-		}
-
-		// Energy budget
-		GRBVar** Z = new GRBVar*[M];
-		for(unsigned long int k = 0; k < M; k++) {
-			Z[k] = new GRBVar[N];
-			for(unsigned long int i = 0; i < N; i++) {
-				Z[k][i] = model.addVar(0.0, Q, 0.0, GRB_CONTINUOUS, "Z_"+itos(k)+"_"+itos(i));
-			}
-		}
-
-		/// Constraints
-		// Limit when Y can be turned on
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				for(int l : vSPerHL.at(i)) {
-					// Y_kil
-					GRBLinExpr expr = Y[k][i][l];
-					// Minus X_kji (edges going into i on k)
-					for(unsigned long int j = 0; j < N; j++) {
-						expr -= X[k][j][i];
-					}
-					model.addConstr(expr <= 0, "Y_"+itos(k)+"_"+itos(i)+"_"+itos(l)+"_leq_X");
-				}
-			}
-		}
-
-		// Enforce budget/eliminate sub-tours (Upper Bound)
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				for(unsigned long int j = 0; j < N; j++) {
-					// Budget at i, on k
-					GRBLinExpr expr = Z[k][i];
-					// Plus cost to talk to l from point i, on tour k
-					for(int l : vSPerHL.at(i)) {
-						expr += sensorCost(vPotentialHL.at(i), G->vNodeLst.at(l)) * Y[k][i][l];
-					}
-					// Plus cost to get to j from i
-					expr += edgeCost(vPotentialHL.at(i), vPotentialHL.at(j)) * X[k][i][j];
-					// Big-M, cancel-out expression if X == 0
-					expr -= Q*(1 - X[k][i][j]);
-					// Minus budget at j on k
-					expr -= Z[k][j];
-
-					model.addConstr(expr <= 0, "Z_"+itos(k)+"_"+itos(j)+"_geq_Z_"+itos(k)+"_"+itos(i));
-				}
-			}
-		}
-
-		// Enforce budget/eliminate sub-tours (Lower Bound)
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				for(unsigned long int j = 0; j < N; j++) {
-					// Budget at i, on k
-					GRBLinExpr expr = Z[k][i];
-					// Plus cost to talk to l from point i, on tour k
-					for(int l : vSPerHL.at(i)) {
-						expr += sensorCost(vPotentialHL.at(i), G->vNodeLst.at(l)) * Y[k][i][l];
-					}
-					// Plus cost to get to j from i
-					expr += edgeCost(vPotentialHL.at(i), vPotentialHL.at(j)) * X[k][i][j];
-					// Big-M, cancel-out expression if X == 0
-					expr += Q*(1 - X[k][i][j]);
-					// Minus budget at j on k
-					expr -= Z[k][j];
-
-					model.addConstr(expr >= 0, "Z_"+itos(k)+"_"+itos(j)+"_geq_Z_"+itos(k)+"_"+itos(i));
-				}
-			}
-		}
-
-		// Shut-off budget when you don't enter a hover location
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				GRBLinExpr expr = 0;
-				// Sum across all edges going into i
-				for(unsigned long int j = 0; j < N; j++) {
-					expr += Q*X[k][j][i];
-				}
-				// Subtract the budget at i
-				expr -= Z[k][i];
-
-				model.addConstr(expr >= 0, "Z_"+itos(k)+"_"+itos(i)+"_leq_X_"+itos(k)+"_*_"+itos(i));
-			}
-		}
-
-		// Must collect from each sensor
-		for(Node l : G->vNodeLst) {
-			int l_ID = l.getID();
-			GRBLinExpr expr = 0;
-			// Sum across tours
+			/// Define variables
+			// Tracks edges between HLs
+			GRBVar*** X = new GRBVar**[M];
 			for(unsigned long int k = 0; k < M; k++) {
-				// Sum across hovering locations close to l
-				for(int i : vHLPerS.at(l_ID)) {
-					expr += Y[k][i][l_ID];
-				}
-			}
-
-			model.addConstr(expr == 1, "Y_k_i_"+itos(l_ID)+"_geq_1");
-		}
-
-		// Degree-in == degree-out
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 1; i < N-1; i++) {
-				GRBLinExpr expr = 0;
-				// Sum across all edges going into i
-				for(unsigned long int j = 0; j < N; j++) {
-					expr += X[k][j][i];
-				}
-				// Sum across all edges going out of i
-				for(unsigned long int j = 0; j < N; j++) {
-					expr -= X[k][i][j];
-				}
-
-				model.addConstr(expr == 0, "X_"+itos(k)+"_*_"+itos(i)+"_eq_X_"+itos(k)+"_"+itos(i)+"_*");
-			}
-		}
-
-		// Must exit from depot-initial
-		for(unsigned long int k = 0; k < M; k++) {
-			GRBLinExpr expr = 0;
-			// Sum across all edges leaving depot on k
-			for(unsigned long int i = 0; i < N; i++) {
-				expr += X[k][0][i];
-			}
-
-			model.addConstr(expr <= 1, "X_"+itos(k)+"_0_i_eq_1");
-		}
-
-		// Must return to depot-final
-		for(unsigned long int k = 0; k < M; k++) {
-			GRBLinExpr expr = 0;
-			// Sum across all edges leaving depot on k
-			for(unsigned long int i = 0; i < N; i++) {
-				expr += X[k][i][N - 1];
-			}
-
-			model.addConstr(expr <= 1, "X_"+itos(k)+"_i_i-hat_eq_1");
-		}
-
-//		for(unsigned long int k = 0; k < (M-1); k++) {
-//			GRBLinExpr expr = 0;
-//			for(unsigned long int i = 0; i < N; i++) {
-//				for(unsigned long int j = 0; j < N; j++) {
-//					expr += edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[k][i][j];
-//					expr -= edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[k+1][i][j];
-//				}
-//			}
-//			model.addConstr(expr >= 0, "X_"+itos(k)+"_leq_X_"+itos(k+1));
-//		}
-
-		// Initial budget is 0
-		for(unsigned long int k = 0; k < M; k++) {
-			model.addConstr(Z[k][0] == 0, "Z_"+itos(k)+"_0_eq_0");
-		}
-
-		// No self-loops
-		for(unsigned long int k = 0; k < M; k++) {
-			for(unsigned long int i = 0; i < N; i++) {
-				GRBLinExpr expr = X[k][i][i];
-				model.addConstr(expr == 0, "no_X_"+itos(k)+"_"+itos(i)+"_"+itos(i));
-			}
-		}
-
-		// No going from depot '0' to depot 'N-1'
-		for(unsigned long int k = 0; k < M; k++) {
-			GRBLinExpr expr = X[k][0][N-1];
-			model.addConstr(expr == 0, "no_X_"+itos(k)+"_0_N");
-		}
-
-		// Run for at most 1.5 hours
-		model.set(GRB_DoubleParam_TimeLimit, 5400);
-		// Use cuts aggressively
-		model.set(GRB_INT_PAR_CUTS, "2");
-
-		// Optimize model
-		model.optimize();
-
-		// Extract solution
-		if (model.get(GRB_IntAttr_SolCount) > 0) {
-			// Create arrays of doubles to collect results
-			double*** Xsol = new double**[M];
-			double*** Ysol = new double**[M];
-			double** Zsol = new double*[M];
-
-			// Extract the results from the solver
-			for(unsigned long int k = 0; k < M; k++) {
-				Xsol[k] = new double*[N];
+				X[k] = new GRBVar*[N];
 				for(unsigned long int i = 0; i < N; i++) {
-					Xsol[k][i] = model.get(GRB_DoubleAttr_X, X[k][i], N);
-				}
-			}
-
-			for(unsigned long int k = 0; k < M; k++) {
-				Ysol[k] = new double*[N];
-				for(unsigned long int i = 0; i < N; i++) {
-					Ysol[k][i] = new double[N];
+					X[k][i] = new GRBVar[N];
 					for(unsigned long int j = 0; j < N; j++) {
-						Ysol[k][i][j] = 0;
-					}
-					for(int l : vSPerHL.at(i)) {
-						Ysol[k][i][l] = *model.get(GRB_DoubleAttr_X, &Y[k][i][l], 1);
+						X[k][i][j] = model.addVar(0.0, 1.0, edgeTime(vPotentialHL.at(i), vPotentialHL.at(j)),
+								GRB_BINARY, "X_"+itos(k)+"_"+itos(i)+"_"+itos(j));
 					}
 				}
 			}
 
+			// Tracks when we talk to each sensor
+			GRBVar*** Y = new GRBVar**[M];
 			for(unsigned long int k = 0; k < M; k++) {
-				Zsol[k] = model.get(GRB_DoubleAttr_X, Z[k], N);
+				Y[k] = new GRBVar*[N];
+				for(unsigned long int i = 0; i < N; i++) {
+					Y[k][i] = new GRBVar[L];
+				}
 			}
 
-			// Print results
-			printf("\nCollect tour:\n");
+			// Create the indexed variables
 			for(unsigned long int k = 0; k < M; k++) {
-				// Make list four sub-tour k
-				std::list<UAV_Stop> tour_k;
-				// Start at depot '0'
-				unsigned long int prevHL = 0;
-				// Put the depot on the list
-				tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
-				// Find all stops on this tour
-				while(prevHL != (N-1)) {
-					// Find the next stop
-					unsigned long int i = 0;
-					for(; i < N; i++) {
-						if(Xsol[k][prevHL][i] > 0.5) {
-							// Found next hovering-location
-							printf(" %ld: %ld -> %ld\n", k, prevHL, i);
-							// Create new UAV stop
-							UAV_Stop tempStop(vPotentialHL[i].fX,vPotentialHL[i].fY);
-							// Determine which sensors we talk to at this hovering location
+				for(unsigned long int i = 0; i < N; i++) {
+					for(int l : vSPerHL.at(i)) {
+						Y[k][i][l] = model.addVar(0.0, 1.0, sensorTime(vPotentialHL.at(i), G->vNodeLst.at(l)),
+								GRB_BINARY, "Y_"+itos(k)+"_"+itos(i)+"_"+itos(l));
+					}
+				}
+			}
+
+			// Energy budget
+			GRBVar** Z = new GRBVar*[M];
+			for(unsigned long int k = 0; k < M; k++) {
+				Z[k] = new GRBVar[N];
+				for(unsigned long int i = 0; i < N; i++) {
+					Z[k][i] = model.addVar(0.0, Q, 0.0, GRB_CONTINUOUS, "Z_"+itos(k)+"_"+itos(i));
+				}
+			}
+
+			/// Constraints
+			// Limit when Y can be turned on
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 0; i < N; i++) {
+					for(int l : vSPerHL.at(i)) {
+						// Y_kil
+						GRBLinExpr expr = Y[k][i][l];
+						// Minus X_kji (edges going into i on k)
+						for(unsigned long int j = 0; j < N; j++) {
+							expr -= X[k][j][i];
+						}
+						model.addConstr(expr <= 0, "Y_"+itos(k)+"_"+itos(i)+"_"+itos(l)+"_leq_X");
+					}
+				}
+			}
+
+			// Enforce budget/eliminate sub-tours (Upper Bound)
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 0; i < N; i++) {
+					for(unsigned long int j = 0; j < N; j++) {
+						// Budget at i, on k
+						GRBLinExpr expr = Z[k][i];
+						// Plus cost to talk to l from point i, on tour k
+						for(int l : vSPerHL.at(i)) {
+							expr += sensorCost(vPotentialHL.at(i), G->vNodeLst.at(l)) * Y[k][i][l];
+						}
+						// Plus cost to get to j from i
+						expr += edgeCost(vPotentialHL.at(i), vPotentialHL.at(j)) * X[k][i][j];
+						// Big-M, cancel-out expression if X == 0
+						expr -= Q*(1 - X[k][i][j]);
+						// Minus budget at j on k
+						expr -= Z[k][j];
+
+						model.addConstr(expr <= 0, "Z_"+itos(k)+"_"+itos(j)+"_geq_Z_"+itos(k)+"_"+itos(i));
+					}
+				}
+			}
+
+			// Enforce budget/eliminate sub-tours (Lower Bound)
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 0; i < N; i++) {
+					for(unsigned long int j = 0; j < N; j++) {
+						// Budget at i, on k
+						GRBLinExpr expr = Z[k][i];
+						// Plus cost to talk to l from point i, on tour k
+						for(int l : vSPerHL.at(i)) {
+							expr += sensorCost(vPotentialHL.at(i), G->vNodeLst.at(l)) * Y[k][i][l];
+						}
+						// Plus cost to get to j from i
+						expr += edgeCost(vPotentialHL.at(i), vPotentialHL.at(j)) * X[k][i][j];
+						// Big-M, cancel-out expression if X == 0
+						expr += Q*(1 - X[k][i][j]);
+						// Minus budget at j on k
+						expr -= Z[k][j];
+
+						model.addConstr(expr >= 0, "Z_"+itos(k)+"_"+itos(j)+"_geq_Z_"+itos(k)+"_"+itos(i));
+					}
+				}
+			}
+
+			// Shut-off budget when you don't enter a hover location
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 0; i < N; i++) {
+					GRBLinExpr expr = 0;
+					// Sum across all edges going into i
+					for(unsigned long int j = 0; j < N; j++) {
+						expr += Q*X[k][j][i];
+					}
+					// Subtract the budget at i
+					expr -= Z[k][i];
+
+					model.addConstr(expr >= 0, "Z_"+itos(k)+"_"+itos(i)+"_leq_X_"+itos(k)+"_*_"+itos(i));
+				}
+			}
+
+			// Must collect from each sensor
+			for(Node l : G->vNodeLst) {
+				int l_ID = l.getID();
+				GRBLinExpr expr = 0;
+				// Sum across tours
+				for(unsigned long int k = 0; k < M; k++) {
+					// Sum across hovering locations close to l
+					for(int i : vHLPerS.at(l_ID)) {
+						expr += Y[k][i][l_ID];
+					}
+				}
+
+				model.addConstr(expr == 1, "Y_k_i_"+itos(l_ID)+"_geq_1");
+			}
+
+			// Degree-in == degree-out
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 1; i < N-1; i++) {
+					GRBLinExpr expr = 0;
+					// Sum across all edges going into i
+					for(unsigned long int j = 0; j < N; j++) {
+						expr += X[k][j][i];
+					}
+					// Sum across all edges going out of i
+					for(unsigned long int j = 0; j < N; j++) {
+						expr -= X[k][i][j];
+					}
+
+					model.addConstr(expr == 0, "X_"+itos(k)+"_*_"+itos(i)+"_eq_X_"+itos(k)+"_"+itos(i)+"_*");
+				}
+			}
+
+			// Must exit from depot-initial
+			for(unsigned long int k = 0; k < M; k++) {
+				GRBLinExpr expr = 0;
+				// Sum across all edges leaving depot on k
+				for(unsigned long int i = 0; i < N; i++) {
+					expr += X[k][0][i];
+				}
+
+				model.addConstr(expr <= 1, "X_"+itos(k)+"_0_i_eq_1");
+			}
+
+			// Must return to depot-final
+			for(unsigned long int k = 0; k < M; k++) {
+				GRBLinExpr expr = 0;
+				// Sum across all edges leaving depot on k
+				for(unsigned long int i = 0; i < N; i++) {
+					expr += X[k][i][N - 1];
+				}
+
+				model.addConstr(expr <= 1, "X_"+itos(k)+"_i_i-hat_eq_1");
+			}
+
+	//		for(unsigned long int k = 0; k < (M-1); k++) {
+	//			GRBLinExpr expr = 0;
+	//			for(unsigned long int i = 0; i < N; i++) {
+	//				for(unsigned long int j = 0; j < N; j++) {
+	//					expr += edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[k][i][j];
+	//					expr -= edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[k+1][i][j];
+	//				}
+	//			}
+	//			model.addConstr(expr >= 0, "X_"+itos(k)+"_leq_X_"+itos(k+1));
+	//		}
+
+			// Initial budget is 0
+			for(unsigned long int k = 0; k < M; k++) {
+				model.addConstr(Z[k][0] == 0, "Z_"+itos(k)+"_0_eq_0");
+			}
+
+			// No self-loops
+			for(unsigned long int k = 0; k < M; k++) {
+				for(unsigned long int i = 0; i < N; i++) {
+					GRBLinExpr expr = X[k][i][i];
+					model.addConstr(expr == 0, "no_X_"+itos(k)+"_"+itos(i)+"_"+itos(i));
+				}
+			}
+
+			// No going from depot '0' to depot 'N-1'
+			for(unsigned long int k = 0; k < M; k++) {
+				GRBLinExpr expr = X[k][0][N-1];
+				model.addConstr(expr == 0, "no_X_"+itos(k)+"_0_N");
+			}
+
+			// Run for at most 1.5 hours
+			model.set(GRB_DoubleParam_TimeLimit, 5400);
+			// Use cuts aggressively
+			model.set(GRB_INT_PAR_CUTS, "2");
+
+			// Optimize model
+			model.optimize();
+
+			// Extract solution
+			if (model.get(GRB_IntAttr_SolCount) > 0) {
+				// Create arrays of doubles to collect results
+				double*** Xsol = new double**[M];
+				double*** Ysol = new double**[M];
+				double** Zsol = new double*[M];
+
+				// Extract the results from the solver
+				for(unsigned long int k = 0; k < M; k++) {
+					Xsol[k] = new double*[N];
+					for(unsigned long int i = 0; i < N; i++) {
+						Xsol[k][i] = model.get(GRB_DoubleAttr_X, X[k][i], N);
+					}
+				}
+
+				for(unsigned long int k = 0; k < M; k++) {
+					Ysol[k] = new double*[N];
+					for(unsigned long int i = 0; i < N; i++) {
+						Ysol[k][i] = new double[N];
+						for(unsigned long int j = 0; j < N; j++) {
+							Ysol[k][i][j] = 0;
+						}
+						for(int l : vSPerHL.at(i)) {
+							Ysol[k][i][l] = *model.get(GRB_DoubleAttr_X, &Y[k][i][l], 1);
+						}
+					}
+				}
+
+				for(unsigned long int k = 0; k < M; k++) {
+					Zsol[k] = model.get(GRB_DoubleAttr_X, Z[k], N);
+				}
+
+				// Print results
+				printf("\nCollect tour:\n");
+				for(unsigned long int k = 0; k < M; k++) {
+					// Make list four sub-tour k
+					std::list<UAV_Stop> tour_k;
+					// Start at depot '0'
+					unsigned long int prevHL = 0;
+					// Put the depot on the list
+					tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
+					// Find all stops on this tour
+					while(prevHL != (N-1)) {
+						// Find the next stop
+						unsigned long int i = 0;
+						for(; i < N; i++) {
+							if(Xsol[k][prevHL][i] > 0.5) {
+								// Found next hovering-location
+								printf(" %ld: %ld -> %ld\n", k, prevHL, i);
+								// Create new UAV stop
+								UAV_Stop tempStop(vPotentialHL[i].fX,vPotentialHL[i].fY);
+								// Determine which sensors we talk to at this hovering location
+								for(unsigned long int l = 0; l < L; l++) {
+									if(Ysol[k][i][l] > 0.5) {
+										printf(" %ld: @ %ld talk to %ld\n", k, i, l);
+										tempStop.nodes.push_back(l);
+									}
+								}
+								printf(" %ld: Budget@%ld = %f\n", k, i, Zsol[k][i]);
+								// Update previous
+								prevHL = i;
+								// Add this node to tour
+								tour_k.push_back(tempStop);
+								break;
+							}
+						}
+						// Verify that nothing went wrong
+						if(i == N) {
+							if(tour_k.size() > 1) {
+								// Something went wrong...
+								fprintf(stderr, "[ERROR] Xsol[][][] does not contain complete graph!\n");
+								exit(1);
+							}
+							else {
+								// Found empty tour
+								printf("* Tour %ld is empty!\n", k);
+								prevHL = N-1;
+								tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
+							}
+						}
+					}
+					vTours.push_back(tour_k);
+				}
+
+				// Sanity print
+				printf("\nFiltered tour:\n");
+				int i = 0;
+				for(std::list<UAV_Stop> l : vTours) {
+					printf(" %d: ", i);
+					for(UAV_Stop n : l) {
+						printf("(%f, %f) ", n.fX, n.fY);
+					}
+					printf("\n");
+					i++;
+				}
+				if(0) {
+
+					printf("\nUn-Filtered tour:\n");
+					for(unsigned long int k = 0; k < M; k++) {
+						for(unsigned long int i = 0; i < N; i++) {
+							for(unsigned long int j = 0; j < N; j++) {
+								if(Xsol[k][i][j] > 0.5) {
+									printf(" %ld: %ld -> %ld\n", k, i, j);
+									for(unsigned long int l = 0; l < L; l++) {
+										if(Ysol[k][j][l] > 0.5) {
+											printf(" %ld: @ %ld talk to %ld\n", k, j, l);
+										}
+									}
+									printf(" %ld: Budget@%ld = %f\n", k, j, Zsol[k][j]);
+								}
+							}
+						}
+					}
+
+					printf("\nData collection:\n");
+					for(unsigned long int k = 0; k < M; k++) {
+						for(unsigned long int i = 0; i < N; i++) {
 							for(unsigned long int l = 0; l < L; l++) {
 								if(Ysol[k][i][l] > 0.5) {
 									printf(" %ld: @ %ld talk to %ld\n", k, i, l);
-									tempStop.nodes.push_back(l);
 								}
 							}
-							printf(" %ld: Budget@%ld = %f\n", k, i, Zsol[k][i]);
-							// Update previous
-							prevHL = i;
-							// Add this node to tour
-							tour_k.push_back(tempStop);
-							break;
 						}
 					}
-					// Verify that nothing went wrong
-					if(i == N) {
-						if(tour_k.size() > 1) {
-							// Something went wrong...
-							fprintf(stderr, "[ERROR] Xsol[][][] does not contain complete graph!\n");
-							exit(1);
-						}
-						else {
-							// Found empty tour
-							printf("* Tour %ld is empty!\n", k);
-							prevHL = N-1;
-							tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
+
+					printf("\nTotal Budget:\n");
+					for(unsigned long int k = 0; k < M; k++) {
+						for(unsigned long int i = 0; i < N; i++) {
+							printf(" %ld: %ld : %f\n", k, i, Zsol[k][i]);
 						}
 					}
 				}
-				vTours.push_back(tour_k);
-			}
 
-			// Sanity print
-			printf("\nFiltered tour:\n");
-			int i = 0;
-			for(std::list<UAV_Stop> l : vTours) {
-				printf(" %d: ", i);
-				for(UAV_Stop n : l) {
-					printf("(%f, %f) ", n.fX, n.fY);
-				}
-				printf("\n");
-				i++;
-			}
-			if(0) {
-
-				printf("\nUn-Filtered tour:\n");
+				// Clean-up memory
 				for(unsigned long int k = 0; k < M; k++) {
 					for(unsigned long int i = 0; i < N; i++) {
-						for(unsigned long int j = 0; j < N; j++) {
-							if(Xsol[k][i][j] > 0.5) {
-								printf(" %ld: %ld -> %ld\n", k, i, j);
-								for(unsigned long int l = 0; l < L; l++) {
-									if(Ysol[k][j][l] > 0.5) {
-										printf(" %ld: @ %ld talk to %ld\n", k, j, l);
-									}
-								}
-								printf(" %ld: Budget@%ld = %f\n", k, j, Zsol[k][j]);
-							}
-						}
+						delete[] Xsol[k][i];
+						delete[] Ysol[k][i];
 					}
+					delete[] Xsol[k];
+					delete[] Ysol[k];
+					delete[] Zsol[k];
 				}
-
-				printf("\nData collection:\n");
-				for(unsigned long int k = 0; k < M; k++) {
-					for(unsigned long int i = 0; i < N; i++) {
-						for(unsigned long int l = 0; l < L; l++) {
-							if(Ysol[k][i][l] > 0.5) {
-								printf(" %ld: @ %ld talk to %ld\n", k, i, l);
-							}
-						}
-					}
-				}
-
-				printf("\nTotal Budget:\n");
-				for(unsigned long int k = 0; k < M; k++) {
-					for(unsigned long int i = 0; i < N; i++) {
-						printf(" %ld: %ld : %f\n", k, i, Zsol[k][i]);
-					}
-				}
+				delete[] Xsol;
+				delete[] Ysol;
+				delete[] Zsol;
+			}
+			else {
+				fprintf(stderr, "[ERROR] : Could not find valid solution!\n");
+				exit(1);
 			}
 
-			// Clean-up memory
-			for(unsigned long int k = 0; k < M; k++) {
-				for(unsigned long int i = 0; i < N; i++) {
-					delete[] Xsol[k][i];
-					delete[] Ysol[k][i];
-				}
-				delete[] Xsol[k];
-				delete[] Ysol[k];
-				delete[] Zsol[k];
-			}
-			delete[] Xsol;
-			delete[] Ysol;
-			delete[] Zsol;
-		}
-		else {
-			fprintf(stderr, "[ERROR] : Could not find valid solution!\n");
+		} catch (GRBException& e) {
+			printf("Error number: %d\n", e.getErrorCode());
+			printf("%s\n", e.getMessage().c_str());
+			exit(1);
+		} catch (...) {
+			printf("Error during optimization\n");
 			exit(1);
 		}
 
-	} catch (GRBException& e) {
-		printf("Error number: %d\n", e.getErrorCode());
-		printf("%s\n", e.getMessage().c_str());
-		exit(1);
-	} catch (...) {
-		printf("Error during optimization\n");
-		exit(1);
+	}
+	else if(ALGORITHM == GREEDY_NN) {
+		// Make a list of hovering locations
+		std::list<HoverLocation> hlList;
+		for(HoverLocation hl : vPotentialHL) {
+			// Verify that this HL is worth stopping at...
+			if(vSPerHL.at(hl.nID).size() > 0) {
+				hlList.push_back(hl);
+			}
+		}
+
+		// Make a serviced array
+		bool* pServiced = new bool[G->vNodeLst.size()];
+		for(unsigned long int i = 0; i < G->vNodeLst.size(); i++) {
+			pServiced[i] = false;
+		}
+
+		// While there are still un-serviced sensors ...
+		bool unservicedSensors = true;
+		while(unservicedSensors) {
+			printf("Starting a new tour\n");
+			// Create a new tour
+			std::list<UAV_Stop> tour;
+			// Start tour at the base station
+			tour.push_back(UAV_Stop(G->mBaseStation.getX(), G->mBaseStation.getY()));
+
+			bool underBudget = true;
+			// While we are still under our energy budget..
+			while(underBudget) {
+				// Find a new HL to attempt to add to tour
+
+				// Start-off with the first HL in our list
+				std::list<HoverLocation>::iterator bstIt = hlList.begin();
+				// Track closest distance
+				double bestDist = INF;
+
+				// Run through our list of HL's, pick closest to UAV's current location
+				for(std::list<HoverLocation>::iterator hlIt = hlList.begin(); hlIt != hlList.end();) {
+					// Determine if this HL services any un-serviced sensors
+					bool usefulHL = false;
+					// Check each HL for this sensor
+					for(int l : vSPerHL.at(hlIt->nID)) {
+						usefulHL |= !pServiced[l];
+					}
+
+					// Check if HL is useful
+					if(usefulHL) {
+						printf(" Found a useful HL: %d\n", hlIt->nID);
+						// HL services at least 1 sensor, consider adding to tour
+						double tempDist = distAtoB(tour.back().fX, tour.back().fY, hlIt->fX, hlIt->fY);
+						// Check to see if this HL is better than current best
+						if(tempDist < bestDist) {
+							printf("  new best\n");
+							// Found new best!
+							bstIt = hlIt;
+							bestDist = tempDist;
+						}
+
+						// Advance iterator
+						hlIt++;
+					}
+					else {
+						// HL is no longer helpful, remove from list (advances iterator)
+						printf(" Can't use HL: %d\n", hlIt->nID);
+						hlIt = hlList.erase(hlIt);
+					}
+				}
+
+				// Check if we found a valid next-stop
+				if(bestDist < INF) {
+					printf(" Attempting to add %d to tour\n", bstIt->nID);
+					// Attempt to add this stop to the tour
+					UAV_Stop nextStop(bstIt->fX, bstIt->fY);
+					// Add un-serviced sensors to stop
+					for(int l : vSPerHL.at(bstIt->nID)) {
+						if(!pServiced[l]) {
+							nextStop.nodes.push_back(l);
+						}
+					}
+					// Verify budget by returning to depot
+					UAV_Stop lastStop(G->mBaseStation.getX(), G->mBaseStation.getY());
+					// Add these stops to the tour
+					tour.push_back(nextStop);
+					tour.push_back(lastStop);
+
+					// Check energy consumption of tour
+					double budget = 0;
+					std::list<UAV_Stop>::iterator lst, nxt;
+					lst = tour.begin();
+					nxt = tour.begin();
+					nxt++;
+
+					// Run through the tour, add up pst for each leg + HL stop
+					while(nxt != tour.end()) {
+						// Add time to move from lst to nxt
+						budget += edgeCost(*lst, *nxt);
+						// Add in time to talk to each sensor at nxt
+						for(int s : nxt->nodes) {
+							budget += sensorCost(*nxt, G->vNodeLst.at(s));
+						}
+
+						// Advance iterators
+						lst++;
+						nxt++;
+					}
+					printf(" New budget: %f\n", budget);
+
+					// If good ...
+					if(budget <= Q) {
+						printf(" Add to tour!\n");
+						// Mark sensors
+						for(int l : vSPerHL.at(bstIt->nID)) {
+							pServiced[l] = true;
+						}
+						// Remove depot
+						tour.pop_back();
+						// Continue running
+						underBudget = true;
+					}
+					else {
+						// Adding this stop put us over budget!
+						printf(" Went over budget\n");
+						// Remove stop
+						tour.pop_back();
+						tour.pop_back();
+						// Add depot
+						tour.push_back(lastStop);
+						// Finish this tour
+						underBudget = false;
+					}
+				}
+				else {
+					// No useful HLs => we have serviced all sensors
+					printf("Serviced every sensor\n");
+					// Add on depot
+					UAV_Stop depot(G->mBaseStation.getX(), G->mBaseStation.getY());
+					tour.push_back(depot);
+					// Exit loop
+					underBudget = false;
+				}
+			}
+
+			// Add this tour to the vector of tours
+			vTours.push_back(tour);
+
+			// Determine if there are still any un-serviced sensors
+			unservicedSensors = false;
+			for(unsigned long int i = 0; i < G->vNodeLst.size(); i++) {
+				unservicedSensors |= !pServiced[i];
+			}
+			printf("Finished tour\n");
+		}
+		printf("Tours complete!\n");
+
+		delete[] pServiced;
 	}
 
+
 	// Print Results before improvements
-	{
+	if(PRINT_RESULTS) {
 		// Print results to file
 		FILE * pOutputFile;
 		char buff[100];
@@ -1079,7 +1226,7 @@ void findRadiusPaths(Graph* G) {
 	}
 
 	// Print Results
-	{
+	if(PRINT_RESULTS) {
 		// Print results to file
 		FILE * pOutputFile;
 		char buff[100];
