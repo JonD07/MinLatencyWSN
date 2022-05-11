@@ -16,17 +16,20 @@
 
 
 #define	MAX_UAV_DIST	10.0
-//#define	UAV_WIFI_RANGE	0.75
 #define EPSILON			0.0001
-#define V_MAX			19.0
-// TODO: Determine UAV energy budget
-#define Q				10
-#define I_HAT			6
 #define INF				1000000000000
+
+// Max UAV velocity and max distance at max velocity
+#define V_MAX			19.0
+#define D_VM			3000.0
+// UAV energy budget
+#define Q				D_VM/V_MAX
 
 
 #define PRINT_RESULTS		false
 #define DATA_LOG_LOCATION	"Output/alg_%d.dat"
+#define MAKE_PLOT_FILE		true
+#define PLOT_FILE_LOCATION	"output_path.txt"
 
 // Algorithm types, should be odd numbers
 #define MILP			1
@@ -139,36 +142,47 @@ double tourDist(std::list<UAV_Stop> &tour) {
 	return dist;
 }
 
+// Actual time to traverse between two hovering locations
 double edgeTime(HoverLocation& i, HoverLocation& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) / V_MAX;
 }
 
+// Actual time to traverse between two UAV stops
 double edgeTime(UAV_Stop& i, UAV_Stop& j) {
 	return distAtoB(i.fX, i.fY, j.fX, j.fY) / V_MAX;
 }
 
-// TODO: These \/ \/
+// Actual time to communicate with sensor l from hovering location i
 double sensorTime(HoverLocation& i, Node& l) {
-	return 2;
+	return 5;
 }
 
+// Actual time to communicate with sensor l from UAV stop i
 double sensorTime(UAV_Stop& i, Node& l) {
-	return 2;
+	return 5;
 }
-// TODO: This is not correct!!
+
+// Budget cost to traverse between two hovering locations
 double edgeCost(HoverLocation& i, HoverLocation& j) {
-	return distAtoB(i.fX, i.fY, j.fX, j.fY) * 0.1;
+	// We are using pst, so this is the actual travel time
+	return edgeTime(i, j);
 }
 
-double sensorCost(HoverLocation& i, Node& l) {
-	return 1;
-}
+// Budget cost to traverse between two UAV stops
 double edgeCost(UAV_Stop& i, UAV_Stop& j) {
-	return distAtoB(i.fX, i.fY, j.fX, j.fY) * 0.1;
+	// We are using pst, so this is the actual travel time
+	return edgeTime(i, j);
 }
 
+// TODO: Add a log-distance model that accounts for distance and energy
+// Budget cost to communicate with sensor l from hovering location i
+double sensorCost(HoverLocation& i, Node& l) {
+	return 2.5;
+}
+
+// Budget cost to communicate with sensor l from UAV stop i
 double sensorCost(UAV_Stop& i, Node& l) {
-	return 1;
+	return 2.5;
 }
 
 void priorityTour(Graph* G) {
@@ -245,8 +259,7 @@ void priorityTour(Graph* G) {
 // Assumes that we were given an actual quadratic equation (a != 0).
 void findRoots(double a, double b, double c, Roots* rt) {
 	double discriminant, realPart, imaginaryPart, x1, x2;
-	// TODO: Don't compare floating point numbers to 0!
-	if (a == 0) {
+	if (isZero(a)) {
 		printf("Requested to find root of non-quadratic\n");
 		exit(1);
 	}
@@ -1270,6 +1283,21 @@ void findRadiusPaths(Graph* G) {
 		printf("Total duration = %f\n ", total_duration);
 		fprintf(pOutputFile, "%ld %f\n", G->vNodeLst.size(), total_duration);
 
+		fclose(pOutputFile);
+	}
+
+	// Print Plot data
+	if(MAKE_PLOT_FILE) {
+		// Print found path to file
+		FILE * pOutputFile;
+		pOutputFile = fopen(PLOT_FILE_LOCATION, "w");
+		printf("\nMaking Plot File\n");
+		for(std::list<UAV_Stop> l : vTours) {
+			for(UAV_Stop n : l) {
+				fprintf(pOutputFile, "%f %f\n", n.fX, n.fY);
+			}
+//			fprintf(pOutputFile, "\n");
+		}
 		fclose(pOutputFile);
 	}
 }
