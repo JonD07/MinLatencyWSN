@@ -26,7 +26,11 @@
 #define Q				D_VM/V_MAX
 
 
-#define PRINT_RESULTS		false
+// TODO: Adjust as needed
+unsigned long int V = 2;
+unsigned long int K = 4;
+
+#define PRINT_RESULTS		true
 #define DATA_LOG_LOCATION	"Output/alg_%d.dat"
 #define MAKE_PLOT_FILE		true
 #define PLOT_FILE_LOCATION	"output_path.txt"
@@ -35,7 +39,7 @@
 #define MILP_I			1
 #define GREEDY_NN		3
 #define MILP_II			5
-#define ALGORITHM		MILP_II
+#define ALGORITHM		GREEDY_NN
 
 struct pNode {
 	int nID;
@@ -195,6 +199,79 @@ double sensorCost(HoverLocation& i, Node& l) {
 // Budget cost to communicate with sensor l from UAV stop i
 double sensorCost(UAV_Stop& i, Node& l) {
 	return 2.5;
+}
+
+void printResults(std::vector<std::list<UAV_Stop>> &vTours, Graph* G, bool bImproved) {
+	// Print results to file
+	FILE * pOutputFile;
+	char buff[100];
+	int alg = bImproved ? ALGORITHM + 1 : ALGORITHM;
+	sprintf(buff, DATA_LOG_LOCATION, alg);
+	printf("%s\n", buff);
+	pOutputFile = fopen(buff, "a");
+
+	printf("\nFound tour:\n");
+	double total_duration = 0;
+	double max_latency = 0;
+	double current_v_dur = 0;
+	int vehicle = 0;
+	for(unsigned long int i = 0; i < vTours.size(); i++) {
+		if(vTours.at(i).size() > 2) {
+			// Start with initial stop-time
+			double duration = stopTime(i%K);
+			std::list<UAV_Stop> l = vTours.at(i);
+			if(l.size() > 1) {
+				std::list<UAV_Stop>::iterator lst, nxt;
+				lst = l.begin();
+				nxt = l.begin();
+				nxt++;
+
+				// Run through the tour, add up distance from stop-to-stop
+				while(nxt != l.end()) {
+					// Add time to move from lst to nxt
+					duration += edgeTime(*lst, *nxt);
+					// Add in time to talk to each sensor at nxt
+					for(int s : nxt->nodes) {
+						duration += sensorTime(*nxt, G->vNodeLst.at(s));
+					}
+
+					// Advance iterators
+					lst++;
+					nxt++;
+				}
+			}
+			printf("%d-%ld: duration = %f\n ", vehicle, i%K, duration);
+
+			total_duration += duration;
+			current_v_dur += duration;
+
+			for(UAV_Stop n : l) {
+				printf(" (%f, %f)", n.fX, n.fY);
+			}
+			printf("\n");
+		}
+
+		if(i%K == K-1) {
+			// Last sub-tour for this vehicle
+			if(max_latency < current_v_dur) {
+				max_latency = current_v_dur;
+			}
+			// Reset for next vehicle
+			current_v_dur = 0;
+			vehicle++;
+		}
+	}
+
+	// Verify that we didn't loop-out early
+	if(max_latency < current_v_dur) {
+		max_latency = current_v_dur;
+	}
+
+	printf("Total duration = %f\n ", total_duration);
+	printf("Worst latency = %f\n ", max_latency);
+	fprintf(pOutputFile, "%ld %ld %f %f\n", V, G->vNodeLst.size(), total_duration, max_latency);
+
+	fclose(pOutputFile);
 }
 
 void priorityTour(Graph* G) {
@@ -497,11 +574,18 @@ void findRadiusPaths(Graph* G) {
 
 	// Lists for each found tour
 	std::vector<std::list<UAV_Stop>> vTours;
+	// Add empty tours to vTours
+	for(unsigned long int v = 0; v < V; v++) {
+		for(unsigned long int k = 0; k < K; k++) {
+			std::list<UAV_Stop> temp;
+			vTours.push_back(temp);
+		}
+	}
 
 
 	/// 3. Solve capacitated VRP
 	if(ALGORITHM == MILP_I) {
-		unsigned long int M = 10;
+		unsigned long int M = K*V;
 
 		try {
 			// Create Gurobi environment
@@ -810,7 +894,7 @@ void findRadiusPaths(Graph* G) {
 							}
 						}
 					}
-					vTours.push_back(tour_k);
+					vTours[k] = tour_k;
 				}
 
 				// Sanity print
@@ -909,6 +993,8 @@ void findRadiusPaths(Graph* G) {
 
 		// While there are still un-serviced sensors ...
 		bool unservicedSensors = true;
+		unsigned long int tourIndex = 0;
+		unsigned long int vehicleIndex = 0;
 		while(unservicedSensors) {
 			printf("Starting a new tour\n");
 			// Create a new tour
@@ -1032,25 +1118,32 @@ void findRadiusPaths(Graph* G) {
 				}
 			}
 
+			// Determine which tour number this is
+			unsigned long int vIndex = vehicleIndex*K + tourIndex;
+
 			// Add this tour to the vector of tours
-			vTours.push_back(tour);
+			vTours[vIndex] = tour;
+
+			printf("Finished tour %ld\n", vIndex);
+			vehicleIndex++;
+
+			// If end of tour iteration for each vehicle, update indices
+			if(vehicleIndex >= V) {
+				vehicleIndex = 0;
+				tourIndex++;
+			}
 
 			// Determine if there are still any un-serviced sensors
 			unservicedSensors = false;
 			for(unsigned long int i = 0; i < G->vNodeLst.size(); i++) {
 				unservicedSensors |= !pServiced[i];
 			}
-			printf("Finished tour\n");
 		}
 		printf("Tours complete!\n");
 
 		delete[] pServiced;
 	}
 	else if(ALGORITHM == MILP_II) {
-		// TODO: Adjust as needed
-		unsigned long int V = 1;
-		unsigned long int K = 2;
-
 		try {
 			// Create Gurobi environment
 			GRBEnv env;
@@ -1485,7 +1578,7 @@ void findRadiusPaths(Graph* G) {
 								}
 							}
 						}
-						vTours.push_back(tour_k);
+						vTours[v*k + k] = tour_k;
 					}
 				}
 
@@ -1588,50 +1681,7 @@ void findRadiusPaths(Graph* G) {
 
 	// Print Results before improvements
 	if(PRINT_RESULTS) {
-		// Print results to file
-		FILE * pOutputFile;
-		char buff[100];
-		sprintf(buff, DATA_LOG_LOCATION, ALGORITHM);
-		printf("%s\n", buff);
-		pOutputFile = fopen(buff, "a");
-
-		printf("\nFound tour:\n");
-		int i = 0;
-		double total_duration = 0;
-		for(std::list<UAV_Stop> l : vTours) {
-			double duration = 0;
-			if(l.size() > 1) {
-				std::list<UAV_Stop>::iterator lst, nxt;
-				lst = l.begin();
-				nxt = l.begin();
-				nxt++;
-
-				// Run through the tour, add up distance from stop-to-stop
-				while(nxt != l.end()) {
-					// Add time to move from lst to nxt
-					duration += edgeTime(*lst, *nxt);
-					// Add in time to talk to each sensor at nxt
-					for(int s : nxt->nodes) {
-						duration += sensorTime(*nxt, G->vNodeLst.at(s));
-					}
-
-					// Advance iterators
-					lst++;
-					nxt++;
-				}
-			}
-			printf("%d: duration = %f\n ", i, duration);
-			total_duration += duration;
-			for(UAV_Stop n : l) {
-				printf("(%f, %f) ", n.fX, n.fY);
-			}
-			printf("\n");
-			i++;
-		}
-		printf("Total duration = %f\n ", total_duration);
-		fprintf(pOutputFile, "%ld %f\n", G->vNodeLst.size(), total_duration);
-
-		fclose(pOutputFile);
+		printResults(vTours, G, false);
 	}
 
 
@@ -1643,7 +1693,7 @@ void findRadiusPaths(Graph* G) {
 		// While moving stops helped... run again!
 		while(runAgain) {
 			runAgain = false;
-			printf(" %ld:\n",i);
+//			printf(" %ld:\n",i);
 			if(vTours.at(i).size() > 2) {
 				std::list<UAV_Stop>::iterator back = vTours.at(i).begin();
 				std::list<UAV_Stop>::iterator middle = vTours.at(i).begin();
@@ -1654,7 +1704,7 @@ void findRadiusPaths(Graph* G) {
 
 				while(front != vTours.at(i).end()) {
 					// Attempt to remove the middle stop
-					printf("  Pretending to remove (%f, %f)\n", middle->fX, middle->fY);
+//					printf("  Pretending to remove (%f, %f)\n", middle->fX, middle->fY);
 
 					// For each sensor
 					UAV_Stop tempOld = *middle;
@@ -1672,7 +1722,7 @@ void findRadiusPaths(Graph* G) {
 						double x_p = (x_v - m*(b - y_v))/(m*m + 1);
 						double y_p = m*x_p + b;
 
-						printf("   l = %d, (x_p, y_p) = (%f, %f)\n", n, x_p, y_p);
+//						printf("   l = %d, (x_p, y_p) = (%f, %f)\n", n, x_p, y_p);
 
 						// Find magnitude of vector u from v to v'
 						double mag_u = sqrt(pow((x_v - x_p), 2) + pow((y_v - y_p), 2));
@@ -1680,7 +1730,7 @@ void findRadiusPaths(Graph* G) {
 						// Check to see if v' is in-range of v
 						if(mag_u <= G->vNodeLst[n].getR()) {
 							// We are in-range
-							printf("    this point is in-range of v!\n");
+//							printf("    this point is in-range of v!\n");
 							// Get total distance of current tour
 							double oldDist = tourDist(vTours.at(i));
 							// Hold onto old stop
@@ -1691,13 +1741,13 @@ void findRadiusPaths(Graph* G) {
 							for(int n : oldStop.nodes) {
 								if(distAtoB(G->vNodeLst[n].getX(), G->vNodeLst[n].getY(),
 										tempStop.fX, tempStop.fY) <= (G->vNodeLst[n].getR() + EPSILON)) {
-									printf("    talk to %d\n", n);
+//									printf("    talk to %d\n", n);
 									tempStop.nodes.push_back(n);
 								}
 							}
 							// Make sure that we have the entire list...
 							if(oldStop.nodes.size() == tempStop.nodes.size()) {
-								printf("     Easy swap!\n");
+//								printf("     Easy swap!\n");
 								// Add this stop to the tour, remove current middle
 								vTours.at(i).erase(middle);
 								middle = front;
@@ -1710,13 +1760,13 @@ void findRadiusPaths(Graph* G) {
 								// See if we made an improvement
 								if(newDist < oldDist) {
 									// Great!
-									printf("    Update helped!\n");
+//									printf("    Update helped!\n");
 									runAgain = true;
 									break;
 								}
 								else {
 									// Adding the new stop didn't help.. remove it
-									printf("    No improvement\n");
+//									printf("    No improvement\n");
 									vTours.at(i).erase(middle);
 									middle = front;
 									vTours.at(i).insert(middle, oldStop);
@@ -1725,7 +1775,7 @@ void findRadiusPaths(Graph* G) {
 							}
 							else {
 								// We can't easily swap out the two stops...
-								printf("    No easy swap\n");
+//								printf("    No easy swap\n");
 							}
 						}
 						else {
@@ -1736,7 +1786,7 @@ void findRadiusPaths(Graph* G) {
 							double x_pp = x_v + x_1*a;
 							double y_pp = y_v + x_2*a;
 
-							printf("    (x_pp, y_pp) = (%f, %f)\n", x_pp, y_pp);
+//							printf("    (x_pp, y_pp) = (%f, %f)\n", x_pp, y_pp);
 
 							// Get total distance of current tour
 							double oldDist = tourDist(vTours.at(i));
@@ -1748,13 +1798,13 @@ void findRadiusPaths(Graph* G) {
 							for(int n : oldStop.nodes) {
 								if(distAtoB(G->vNodeLst[n].getX(), G->vNodeLst[n].getY(),
 										tempStop.fX, tempStop.fY) <= (G->vNodeLst[n].getR() + EPSILON)) {
-									printf("    talk to %d\n", n);
+//									printf("    talk to %d\n", n);
 									tempStop.nodes.push_back(n);
 								}
 							}
 							// Make sure that we have the entire list...
 							if(oldStop.nodes.size() == tempStop.nodes.size()) {
-								printf("     Easy swap!\n");
+//								printf("     Easy swap!\n");
 								// Add this stop to the tour, remove current middle
 								vTours.at(i).erase(middle);
 								middle = front;
@@ -1767,13 +1817,13 @@ void findRadiusPaths(Graph* G) {
 								// See if we made an improvement
 								if(newDist < oldDist) {
 									// Great!
-									printf("    Update helped!\n");
+//									printf("    Update helped!\n");
 									runAgain = true;
 									break;
 								}
 								else {
 									// Adding the new stop didn't help.. remove it
-									printf("    No improvement\n");
+//									printf("    No improvement\n");
 									vTours.at(i).erase(middle);
 									middle = front;
 									vTours.at(i).insert(middle, oldStop);
@@ -1782,7 +1832,7 @@ void findRadiusPaths(Graph* G) {
 							}
 							else {
 								// We can't easily swap out the two stops...
-								printf("    No easy swap\n");
+//								printf("    No easy swap\n");
 							}
 						}
 					}
@@ -1797,65 +1847,22 @@ void findRadiusPaths(Graph* G) {
 	}
 
 	// Sanity print
-	{
-		printf("\nImproved tour:\n");
-		int i = 0;
-		for(std::list<UAV_Stop> l : vTours) {
-			printf(" %d: ", i);
-			for(UAV_Stop n : l) {
-				printf("(%f, %f) ", n.fX, n.fY);
-			}
-			printf("\n");
-			i++;
-		}
-	}
+//	{
+//		printf("\nImproved tour:\n");
+//		int i = 0;
+//		for(std::list<UAV_Stop> l : vTours) {
+//			printf(" %d: ", i);
+//			for(UAV_Stop n : l) {
+//				printf("(%f, %f) ", n.fX, n.fY);
+//			}
+//			printf("\n");
+//			i++;
+//		}
+//	}
 
 	// Print Results
 	if(PRINT_RESULTS) {
-		// Print results to file
-		FILE * pOutputFile;
-		char buff[100];
-		sprintf(buff, DATA_LOG_LOCATION, ALGORITHM + 1);
-		printf("%s\n", buff);
-		pOutputFile = fopen(buff, "a");
-
-		printf("\nImproved tour:\n");
-		int i = 0;
-		double total_duration = 0;
-		for(std::list<UAV_Stop> l : vTours) {
-			double duration = 0;
-			if(l.size() > 1) {
-				std::list<UAV_Stop>::iterator lst, nxt;
-				lst = l.begin();
-				nxt = l.begin();
-				nxt++;
-
-				// Run through the tour, add up distance from stop-to-stop
-				while(nxt != l.end()) {
-					// Add time to move from lst to nxt
-					duration += edgeTime(*lst, *nxt);
-					// Add in time to talk to each sensor at nxt
-					for(int s : nxt->nodes) {
-						duration += sensorTime(*nxt, G->vNodeLst.at(s));
-					}
-
-					// Advance iterators
-					lst++;
-					nxt++;
-				}
-			}
-			printf("%d: duration = %f\n ", i, duration);
-			total_duration += duration;
-			for(UAV_Stop n : l) {
-				printf("(%f, %f) ", n.fX, n.fY);
-			}
-			printf("\n");
-			i++;
-		}
-		printf("Total duration = %f\n ", total_duration);
-		fprintf(pOutputFile, "%ld %f\n", G->vNodeLst.size(), total_duration);
-
-		fclose(pOutputFile);
+		printResults(vTours, G, true);
 	}
 
 	// Print Plot data
