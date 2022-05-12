@@ -1,16 +1,16 @@
 import random
 
-NUM_PLOTS = 10
+NUM_PLOTS = 3
 START_COUNT = 5
 END_COUNT = 50
 Increment = 5
 
-FILE_PATH = "Experiment/"
+FILE_PATH = "Experiment2/"
 
-MAX_X = 20
-MAX_Y = 20
-R_MAX = 1.5
-R_MIN = 0.8
+MAX_X = 400
+MAX_Y = 400
+R_MAX = 50
+R_MIN = 20
 
 for n in range(START_COUNT, (END_COUNT + Increment), Increment):
 	for i in range(NUM_PLOTS):
