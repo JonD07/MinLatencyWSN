@@ -36,8 +36,9 @@ unsigned long int K = 4;
 #define PLOT_FILE_LOCATION	"output_path.txt"
 
 // Help solve faster?
-#define MIN_MAX				false	// This is the real objective
-#define INITIAL_SOLUTION	true
+bool MIN_MAX			=	false;	// This is the real objective
+bool INITIAL_SOLUTION	=	true;
+bool CLIQUE_CUTS		=	true;
 
 // Algorithm types, should be odd numbers
 #define MILP_I			1
@@ -1207,13 +1208,6 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 					}
 				}
 			}
-//			for(unsigned long int i = 0; i < N; i++) {
-//				for(unsigned long int k = 0; k < K; k++) {
-//					for(unsigned long int v = 0; v < V; v++) {
-//						Z[i][k][v].set(GRB_DoubleAttr_Start, 0.0);
-//					}
-//				}
-//			}
 
 			// Run through the solution, add the appropriate data to start attributes
 			printf("Heuristic gave us:\n");
@@ -1249,9 +1243,15 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 					printf("\n");
 				}
 			}
+		}
+
+		if(CLIQUE_CUTS) {
+			// Cut down on groups of HLs that all service the same location
+
 
 
 			// TODO: here!!
+
 		}
 
 		/// Constraints
@@ -1966,10 +1966,32 @@ void findRadiusPaths(Graph* G) {
 }
 
 int main(int argc, char *argv[]) {
-	if(argc != 2) {
-		printf("Expected use:min-lat <file path>\n");
+	// Verify user input
+	if(argc != 4) {
+		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
 		return 1;
 	}
+
+	// Display given configurations
+	printf("\nUsing graph: %s\n", argv[1]);
+	if(atoi(argv[2])) {
+		printf(" Min-Max: true\n");
+		MIN_MAX = true;
+	}
+	else {
+		printf(" Min-Max: false\n");
+		MIN_MAX = false;
+	}
+
+	if(atoi(argv[3])) {
+		printf(" Initial Solution Heuristic: true\n");
+		INITIAL_SOLUTION = true;
+	}
+	else {
+		printf(" Initial Solution Heuristic: false\n");
+		INITIAL_SOLUTION = false;
+	}
+	printf("\n\n");
 
 	// Create the graph
 	Graph G(argv[1]);
