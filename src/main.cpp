@@ -30,10 +30,14 @@
 unsigned long int V = 2;
 unsigned long int K = 4;
 
-#define PRINT_RESULTS		true
+#define PRINT_RESULTS		false
 #define DATA_LOG_LOCATION	"Output/alg_%d.dat"
-#define MAKE_PLOT_FILE		true
+#define MAKE_PLOT_FILE		false
 #define PLOT_FILE_LOCATION	"output_path.txt"
+
+// Help solve faster?
+#define MIN_MAX				false	// This is the real objective
+#define INITIAL_SOLUTION	false
 
 // Algorithm types, should be odd numbers
 #define MILP_I			1
@@ -755,14 +759,13 @@ void runBasicMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vecto
 
 			// Sanity print
 			printf("\nFiltered tour:\n");
-			int i = 0;
-			for(std::list<UAV_Stop> l : vTours) {
-				printf(" %d: ", i);
+			for(unsigned long int i = 0; i < vTours.size(); i++) {
+				std::list<UAV_Stop> l = vTours.at(i);
+				printf(" %ld: ", i);
 				for(UAV_Stop n : l) {
 					printf("(%f, %f) ", n.fX, n.fY);
 				}
 				printf("\n");
-				i++;
 			}
 			if(0) {
 
@@ -999,6 +1002,16 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 	}
 	printf("Tours complete!\n");
 
+	printf("\nFiltered tour:\n");
+	for(unsigned long int i = 0; i < vTours.size(); i++) {
+		std::list<UAV_Stop> l = vTours.at(i);
+		printf(" %ld: ", i);
+		for(UAV_Stop n : l) {
+			printf("(%f, %f) ", n.fX, n.fY);
+		}
+		printf("\n");
+	}
+
 	delete[] pServiced;
 }
 
@@ -1074,19 +1087,12 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 			}
 		}
 
-		// Auxiliary variable
-		// Min ~ Max
-		GRBVar W = model.addVar(0.0, GRB_INFINITY, 1.0, GRB_CONTINUOUS, "W");
-		// Minimize total
-//			GRBVar* W = new GRBVar[V];
-//			for(unsigned long int v = 0; v < V; v++) {
-//				W[v] = model.addVar(0.0, GRB_INFINITY, 1.0, GRB_CONTINUOUS, "W_"+itos(v));
-//			}
+		/// Attempt to improve solution
 
-		/// Constraints
-		// W is the sum of time each UAV is used
-		// Min ~ Max
-		{
+		// Auxiliary variables for Min ~ Max (this is the real objective function)
+		if(MIN_MAX) {
+			// Min ~ Max aux variable
+			GRBVar W = model.addVar(0.0, GRB_INFINITY, 1.0, GRB_CONTINUOUS, "W");
 			for(unsigned long int v = 0; v < V; v++) {
 				GRBLinExpr expr = W;
 
@@ -1117,36 +1123,105 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 				model.addConstr(expr >= 0, "W_geq_tot_"+itos(v));
 			}
 		}
-		// Minimize total
-//			for(unsigned long int v = 0; v < V; v++) {
-//				GRBLinExpr expr = W[v];
-//
-//				// Sum on time-cost for each graph edge for each sub-tour
-//				for(unsigned long int i = 0; i < N; i++) {
-//					for(unsigned long int j = 0; j < N; j++) {
-//						for(unsigned long int k = 0; k < K; k++) {
-//							expr -= edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[i][j][k][v];
-//						}
+		else {
+			// Minimize total time
+			GRBVar* W = new GRBVar[V];
+			for(unsigned long int v = 0; v < V; v++) {
+				W[v] = model.addVar(0.0, GRB_INFINITY, 1.0, GRB_CONTINUOUS, "W_"+itos(v));
+			}
+			 // W is the sum of time each UAV is used
+			 // Minimize total
+			for(unsigned long int v = 0; v < V; v++) {
+				GRBLinExpr expr = W[v];
+
+				// Sum on time-cost for each graph edge for each sub-tour
+				for(unsigned long int i = 0; i < N; i++) {
+					for(unsigned long int j = 0; j < N; j++) {
+						for(unsigned long int k = 0; k < K; k++) {
+							expr -= edgeTime(vPotentialHL.at(i), vPotentialHL.at(j))*X[i][j][k][v];
+						}
+					}
+				}
+
+				// Sum on the time-cost to talk to each sensor, from each HL, for each sub-tour
+				for(unsigned long int i = 0; i < N; i++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						for(int l : vSPerHL.at(i)) {
+							expr -= sensorTime(vPotentialHL.at(i), G->vNodeLst.at(l))*Y[i][l][k][v];
+						}
+					}
+				}
+
+				// Add in additional cost for subsequent tours
+				for(unsigned long int i = 0; i < N; i++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						expr -= stopTime(k)*X[0][i][k][v];
+					}
+				}
+				model.addConstr(expr >= 0, "W_"+itos(v)+"_geq_tot");
+			}
+			delete[] W;
+		}
+
+		/// Add initial solution?
+		if(INITIAL_SOLUTION) {
+			// Create new vector of lists for greedy solution
+			std::vector<std::list<UAV_Stop>> vTempTours;
+			// Add empty tours to vTours
+			for(unsigned long int v = 0; v < V; v++) {
+				for(unsigned long int k = 0; k < K; k++) {
+					std::list<UAV_Stop> temp;
+					vTempTours.push_back(temp);
+				}
+			}
+
+			// Use greedy nearest-neighbor approach to find an initial solution
+			runNN(G, vPotentialHL, vSPerHL, vHLPerS, vTempTours);
+
+			// Set defaults for all START values
+			for(unsigned long int i = 0; i < N; i++) {
+				for(unsigned long int j = 0; j < N; j++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						for(unsigned long int v = 0; v < V; v++) {
+							X[i][j][k][v].set(GRB_DoubleAttr_Start, 0.0);
+						}
+					}
+				}
+			}
+			for(unsigned long int i = 0; i < N; i++) {
+				for(unsigned long int k = 0; k < K; k++) {
+					for(unsigned long int v = 0; v < V; v++) {
+						for(int l : vSPerHL.at(i)) {
+							Y[i][l][k][v].set(GRB_DoubleAttr_Start, 0.0);
+						}
+					}
+				}
+			}
+//			for(unsigned long int i = 0; i < N; i++) {
+//				for(unsigned long int k = 0; k < K; k++) {
+//					for(unsigned long int v = 0; v < V; v++) {
+//						Z[i][k][v].set(GRB_DoubleAttr_Start, 0.0);
 //					}
 //				}
-//
-//				// Sum on the time-cost to talk to each sensor, from each HL, for each sub-tour
-//				for(unsigned long int i = 0; i < N; i++) {
-//					for(unsigned long int k = 0; k < K; k++) {
-//						for(int l : vSPerHL.at(i)) {
-//							expr -= sensorTime(vPotentialHL.at(i), G->vNodeLst.at(l))*Y[i][l][k][v];
-//						}
-//					}
-//				}
-//
-//				// Add in additional cost for subsequent tours
-//				for(unsigned long int i = 0; i < N; i++) {
-//					for(unsigned long int k = 0; k < K; k++) {
-//						expr -= stopTime(k)*X[0][i][k][v];
-//					}
-//				}
-//				model.addConstr(expr >= 0, "W_"+itos(v)+"_geq_tot");
 //			}
+
+			// Run through the solution, add the appropriate data to start attributes
+//			for(unsigned long int i = 0; i < vTempTours.size(); i++) {
+//				std::list<UAV_Stop> lst = vTempTours.at(i);
+//
+//				if()
+//			}
+//			for(std::list<UAV_Stop> lst : vTempTours) {
+//				for(UAV_Stop node : lst) {
+//					node.
+//				}
+//			}
+//
+
+			// TODO: here!!
+		}
+
+		/// Constraints
 
 		// Limit when Y can be turned on
 		for(unsigned long int i = 0; i < N; i++) {
@@ -1298,15 +1373,15 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 			}
 		}
 
-//			// No self-loops
-//			for(unsigned long int i = 0; i < N; i++) {
-//				for(unsigned long int k = 0; k < K; k++) {
-//					for(unsigned long int v = 0; v < V; v++) {
-//						GRBLinExpr expr = X[i][i][k][v];
-//						model.addConstr(expr == 0, "no_X_"+itos(i)+"_"+itos(i)+"_"+itos(k)+"_"+itos(v));
-//					}
-//				}
-//			}
+		// No self-loops
+		for(unsigned long int i = 0; i < N; i++) {
+			for(unsigned long int k = 0; k < K; k++) {
+				for(unsigned long int v = 0; v < V; v++) {
+					GRBLinExpr expr = X[i][i][k][v];
+					model.addConstr(expr == 0, "no_X_"+itos(i)+"_"+itos(i)+"_"+itos(k)+"_"+itos(v));
+				}
+			}
+		}
 
 		// Remove symmetry in assigning routes to vehicles
 //		for(unsigned long int k = 0; k < (M-1); k++) {
@@ -1432,64 +1507,26 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 							}
 							else {
 								// Found empty tour
-								printf("* Tour %ld is empty!\n", k);
+								printf("* Tour %ld is empty!\n", (v*K + k));
 								prevHL = N-1;
 								tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
 							}
 						}
 					}
-					vTours[v*k + k] = tour_k;
+					vTours[v*K + k] = tour_k;
 				}
 			}
 
 			// Sanity print
 			printf("\nFiltered tour:\n");
-			int i = 0;
-			for(std::list<UAV_Stop> l : vTours) {
-				printf(" %d: ", i);
+			for(unsigned long int i = 0; i < vTours.size(); i++) {
+				std::list<UAV_Stop> l = vTours.at(i);
+				printf(" %ld: ", i);
 				for(UAV_Stop n : l) {
 					printf("(%f, %f) ", n.fX, n.fY);
 				}
 				printf("\n");
-				i++;
 			}
-
-//				if(0) {
-//					printf("\nUn-Filtered tour:\n");
-//					for(unsigned long int k = 0; k < M; k++) {
-//						for(unsigned long int i = 0; i < N; i++) {
-//							for(unsigned long int j = 0; j < N; j++) {
-//								if(Xsol[k][i][j] > 0.5) {
-//									printf(" %ld: %ld -> %ld\n", k, i, j);
-//									for(unsigned long int l = 0; l < L; l++) {
-//										if(Ysol[k][j][l] > 0.5) {
-//											printf(" %ld: @ %ld talk to %ld\n", k, j, l);
-//										}
-//									}
-//									printf(" %ld: Budget@%ld = %f\n", k, j, Zsol[k][j]);
-//								}
-//							}
-//						}
-//					}
-//
-//					printf("\nData collection:\n");
-//					for(unsigned long int k = 0; k < M; k++) {
-//						for(unsigned long int i = 0; i < N; i++) {
-//							for(unsigned long int l = 0; l < L; l++) {
-//								if(Ysol[k][i][l] > 0.5) {
-//									printf(" %ld: @ %ld talk to %ld\n", k, i, l);
-//								}
-//							}
-//						}
-//					}
-//
-//					printf("\nTotal Budget:\n");
-//					for(unsigned long int k = 0; k < M; k++) {
-//						for(unsigned long int i = 0; i < N; i++) {
-//							printf(" %ld: %ld : %f\n", k, i, Zsol[k][i]);
-//						}
-//					}
-//				}
 
 			// Clean-up memory
 			for(unsigned long int i = 0; i < N; i++) {
@@ -1521,7 +1558,6 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 				delete[] Zsol[i];
 			}
 			delete[] Zsol;
-//				delete[] WSol;
 		}
 		else {
 			fprintf(stderr, "[ERROR] : Could not find valid solution!\n");
@@ -1862,18 +1898,18 @@ void findRadiusPaths(Graph* G) {
 	}
 
 	// Sanity print
-//	{
-//		printf("\nImproved tour:\n");
-//		int i = 0;
-//		for(std::list<UAV_Stop> l : vTours) {
-//			printf(" %d: ", i);
-//			for(UAV_Stop n : l) {
-//				printf("(%f, %f) ", n.fX, n.fY);
-//			}
-//			printf("\n");
-//			i++;
-//		}
-//	}
+	{
+		printf("\nImproved tour:\n");
+		int i = 0;
+		for(std::list<UAV_Stop> l : vTours) {
+			printf(" %d: ", i);
+			for(UAV_Stop n : l) {
+				printf("(%f, %f) ", n.fX, n.fY);
+			}
+			printf("\n");
+			i++;
+		}
+	}
 
 	// Print Results
 	if(PRINT_RESULTS) {
