@@ -1264,22 +1264,58 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 			// Add a clique-cut to each HL so that at-most one in-bound X == 1
 			printf("Adding clique-cuts to each hovering location\n");
 
+			// Only let one UAV, on a single sub-tour enter i
+			for(unsigned long int i = 1; i < N-1; i++) {
+				GRBLinExpr expr = 0;
+				for(unsigned long int j = 0; j < N; j++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						for(unsigned long int v = 0; v < V; v++) {
+							expr += X[j][i][k][v];
+						}
+					}
+				}
+				model.addConstr(expr <= 1, "X_j_"+itos(i)+"_k_v_leq_1");
+			}
+
 			// For each sensor l
 			for(Node l : G->vNodeLst) {
 				GRBLinExpr expr = 0;
+				printf("Clique on %d\n", l.getID());
 				// For each HL i that services l
 				for(int i : vHLPerS.at(l.getID())) {
-					// Sum on all edges, on all sub-tours, on all vehicles going into i
-					for(unsigned long int j = 0; j < N; j++) {
-						for(unsigned long int k = 0; k < K; k++) {
-							for(unsigned long int v = 0; v < V; v++) {
-								expr += X[j][i][k][v];
+					// Check to see if this HL can only service l
+					if(vSPerHL.at(i).size() <= 1) {
+						printf(" %d", i);
+						// Sum on all edges, on all sub-tours, on all vehicles going into i
+						for(unsigned long int j = 0; j < N; j++) {
+							for(unsigned long int k = 0; k < K; k++) {
+								for(unsigned long int v = 0; v < V; v++) {
+									expr += X[j][i][k][v];
+								}
 							}
 						}
 					}
 				}
+				printf("\n");
 				model.addConstr(expr <= 1, "X_j_i_k_v_leq_1_for_"+itos(l.getID()));
 			}
+
+//			// For each sensor l
+//			for(Node l : G->vNodeLst) {
+//				GRBLinExpr expr = 0;
+//				// For each HL i that services l
+//				for(int i : vHLPerS.at(l.getID())) {
+//					// Sum on all edges, on all sub-tours, on all vehicles going into i
+//					for(unsigned long int j = 0; j < N; j++) {
+//						for(unsigned long int k = 0; k < K; k++) {
+//							for(unsigned long int v = 0; v < V; v++) {
+//								expr += X[j][i][k][v];
+//							}
+//						}
+//					}
+//				}
+//				model.addConstr(expr <= 1, "X_j_i_k_v_leq_1_for_"+itos(l.getID()));
+//			}
 		}
 
 		/// Constraints
