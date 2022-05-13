@@ -30,14 +30,14 @@
 unsigned long int V = 2;
 unsigned long int K = 4;
 
-#define PRINT_RESULTS		false
+#define PRINT_RESULTS		true
 #define DATA_LOG_LOCATION	"Output/alg_%d.dat"
-#define MAKE_PLOT_FILE		false
+#define MAKE_PLOT_FILE		true
 #define PLOT_FILE_LOCATION	"output_path.txt"
 
 // Help solve faster?
 #define MIN_MAX				false	// This is the real objective
-#define INITIAL_SOLUTION	false
+#define INITIAL_SOLUTION	true
 
 // Algorithm types, should be odd numbers
 #define MILP_I			1
@@ -75,16 +75,25 @@ struct Roots {
 
 // Struct to hold a UAV stop
 struct UAV_Stop {
+	int nMappedID;
 	double fX;
 	double fY;
 	std::list<int> nodes;
 
 	UAV_Stop(double x, double y) {
+		nMappedID = -1;
+		fX = x;
+		fY = y;
+	}
+
+	UAV_Stop(double x, double y, int mappedID) {
+		nMappedID = mappedID;
 		fX = x;
 		fY = y;
 	}
 
 	UAV_Stop(const UAV_Stop &stp) {
+		nMappedID = stp.nMappedID;
 		fX = stp.fX;
 		fY = stp.fY;
 		for(int n : stp.nodes) {
@@ -837,6 +846,7 @@ void runBasicMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vecto
 
 void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL,
 		std::vector<std::list<int>> &vHLPerS, std::vector<std::list<UAV_Stop>> &vTours) {
+	printf("\nRunning Nearest Neighbor\n");
 	// Make a list of hovering locations
 	std::list<HoverLocation> hlList;
 	for(HoverLocation hl : vPotentialHL) {
@@ -861,7 +871,7 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 		// Create a new tour
 		std::list<UAV_Stop> tour;
 		// Start tour at the base station
-		tour.push_back(UAV_Stop(G->mBaseStation.getX(), G->mBaseStation.getY()));
+		tour.push_back(UAV_Stop(G->mBaseStation.getX(), G->mBaseStation.getY(), 0));
 
 		bool underBudget = true;
 		// While we are still under our energy budget..
@@ -884,12 +894,12 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 
 				// Check if HL is useful
 				if(usefulHL) {
-					printf(" Found a useful HL: %d\n", hlIt->nID);
+//					printf(" Found a useful HL: %d\n", hlIt->nID);
 					// HL services at least 1 sensor, consider adding to tour
 					double tempDist = distAtoB(tour.back().fX, tour.back().fY, hlIt->fX, hlIt->fY);
 					// Check to see if this HL is better than current best
 					if(tempDist < bestDist) {
-						printf("  new best\n");
+//						printf("  new best\n");
 						// Found new best!
 						bstIt = hlIt;
 						bestDist = tempDist;
@@ -900,16 +910,16 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 				}
 				else {
 					// HL is no longer helpful, remove from list (advances iterator)
-					printf(" Can't use HL: %d\n", hlIt->nID);
+//					printf(" Can't use HL: %d\n", hlIt->nID);
 					hlIt = hlList.erase(hlIt);
 				}
 			}
 
 			// Check if we found a valid next-stop
 			if(bestDist < INF) {
-				printf(" Attempting to add %d to tour\n", bstIt->nID);
+//				printf(" Attempting to add %d to tour\n", bstIt->nID);
 				// Attempt to add this stop to the tour
-				UAV_Stop nextStop(bstIt->fX, bstIt->fY);
+				UAV_Stop nextStop(bstIt->fX, bstIt->fY, bstIt->nID);
 				// Add un-serviced sensors to stop
 				for(int l : vSPerHL.at(bstIt->nID)) {
 					if(!pServiced[l]) {
@@ -917,7 +927,7 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 					}
 				}
 				// Verify budget by returning to depot
-				UAV_Stop lastStop(G->mBaseStation.getX(), G->mBaseStation.getY());
+				UAV_Stop lastStop(G->mBaseStation.getX(), G->mBaseStation.getY(), vPotentialHL.back().nID);
 				// Add these stops to the tour
 				tour.push_back(nextStop);
 				tour.push_back(lastStop);
@@ -942,11 +952,11 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 					lst++;
 					nxt++;
 				}
-				printf(" New budget: %f\n", budget);
+//				printf(" New budget: %f\n", budget);
 
 				// If good ...
 				if(budget <= Q) {
-					printf(" Add to tour!\n");
+//					printf(" Add to tour!\n");
 					// Mark sensors
 					for(int l : vSPerHL.at(bstIt->nID)) {
 						pServiced[l] = true;
@@ -958,7 +968,7 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 				}
 				else {
 					// Adding this stop put us over budget!
-					printf(" Went over budget\n");
+//					printf(" Went over budget\n");
 					// Remove stop
 					tour.pop_back();
 					tour.pop_back();
@@ -972,7 +982,7 @@ void runNN(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::
 				// No useful HLs => we have serviced all sensors
 				printf("Serviced every sensor\n");
 				// Add on depot
-				UAV_Stop depot(G->mBaseStation.getX(), G->mBaseStation.getY());
+				UAV_Stop depot(G->mBaseStation.getX(), G->mBaseStation.getY(), vPotentialHL.back().nID);
 				tour.push_back(depot);
 				// Exit loop
 				underBudget = false;
@@ -1206,17 +1216,40 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 //			}
 
 			// Run through the solution, add the appropriate data to start attributes
-//			for(unsigned long int i = 0; i < vTempTours.size(); i++) {
-//				std::list<UAV_Stop> lst = vTempTours.at(i);
-//
-//				if()
-//			}
-//			for(std::list<UAV_Stop> lst : vTempTours) {
-//				for(UAV_Stop node : lst) {
-//					node.
-//				}
-//			}
-//
+			printf("Heuristic gave us:\n");
+			for(unsigned long int i = 0; i < vTempTours.size(); i++) {
+				std::list<UAV_Stop> lst = vTempTours.at(i);
+
+				// Any valid solution has atleast 3 HLs
+				if(lst.size() > 2) {
+					std::list<UAV_Stop>::iterator prev = lst.begin();
+					std::list<UAV_Stop>::iterator next = lst.begin();
+					next++;
+
+					// Determine which v and k this is
+					int v = i/K;
+					int k = i%K;
+					printf("%ld -> v=%d, k=%d\n", i, v, k);
+
+					// Step through tour
+					while(next != lst.end()) {
+						// Add this edge to solver
+						printf(" (%d, %d)", prev->nMappedID, next->nMappedID);
+						X[prev->nMappedID][next->nMappedID][k][v].set(GRB_DoubleAttr_Start, 1.0);
+
+						// Add which sensors to talk to
+						for(int l : next->nodes) {
+							Y[next->nMappedID][l][k][v].set(GRB_DoubleAttr_Start, 1.0);
+						}
+
+						// Advance iterators
+						prev++;
+						next++;
+					}
+					printf("\n");
+				}
+			}
+
 
 			// TODO: here!!
 		}
