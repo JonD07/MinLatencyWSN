@@ -37,8 +37,9 @@ unsigned long int K = 4;
 
 // Help solve faster?
 bool MIN_MAX			=	false;	// This is the real objective
-bool INITIAL_SOLUTION	=	true;
-bool CLIQUE_CUTS		=	true;
+bool INITIAL_SOLUTION	=	false;
+bool PRIORITIES			=	false;
+bool CLIQUE_CUTS		=	false;
 
 // Algorithm types, should be odd numbers
 #define MILP_I			1
@@ -1245,9 +1246,18 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 			}
 		}
 
-		if(CLIQUE_CUTS) {
-			// Cut down on groups of HLs that all service the same location
-
+		if(PRIORITIES) {
+			// Add priorities to the branches that X_ijkv where j services the most sensors
+			printf("Adding branching priorities to X\n");
+			for(HoverLocation hl : vPotentialHL) {
+				for(unsigned long int j = 0; j < N; j++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						for(unsigned long int v = 0; v < V; v++) {
+							X[j][hl.nID][k][v].set(GRB_IntAttr_BranchPriority, vSPerHL.at(hl.nID).size());
+						}
+					}
+				}
+			}
 
 
 			// TODO: here!!
@@ -1967,7 +1977,7 @@ void findRadiusPaths(Graph* G) {
 
 int main(int argc, char *argv[]) {
 	// Verify user input
-	if(argc != 4) {
+	if(argc != 5) {
 		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
 		return 1;
 	}
@@ -1991,6 +2001,16 @@ int main(int argc, char *argv[]) {
 		printf(" Initial Solution Heuristic: false\n");
 		INITIAL_SOLUTION = false;
 	}
+
+	if(atoi(argv[4])) {
+		printf(" Priority Branching: true\n");
+		PRIORITIES = true;
+	}
+	else {
+		printf(" Priority Branching: false\n");
+		PRIORITIES = false;
+	}
+
 	printf("\n\n");
 
 	// Create the graph
