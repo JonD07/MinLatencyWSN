@@ -1258,10 +1258,28 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 					}
 				}
 			}
+		}
 
+		if(CLIQUE_CUTS) {
+			// Add a clique-cut to each HL so that at-most one in-bound X == 1
+			printf("Adding clique-cuts to each hovering location\n");
 
-			// TODO: here!!
-
+			// For each sensor l
+			for(Node l : G->vNodeLst) {
+				GRBLinExpr expr = 0;
+				// For each HL i that services l
+				for(int i : vHLPerS.at(l.getID())) {
+					// Sum on all edges, on all sub-tours, on all vehicles going into i
+					for(unsigned long int j = 0; j < N; j++) {
+						for(unsigned long int k = 0; k < K; k++) {
+							for(unsigned long int v = 0; v < V; v++) {
+								expr += X[j][i][k][v];
+							}
+						}
+					}
+				}
+				model.addConstr(expr <= 1, "X_j_i_k_v_leq_1_for_"+itos(l.getID()));
+			}
 		}
 
 		/// Constraints
@@ -1977,7 +1995,7 @@ void findRadiusPaths(Graph* G) {
 
 int main(int argc, char *argv[]) {
 	// Verify user input
-	if(argc != 5) {
+	if(argc != 6) {
 		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
 		return 1;
 	}
@@ -2011,9 +2029,18 @@ int main(int argc, char *argv[]) {
 		PRIORITIES = false;
 	}
 
+	if(atoi(argv[5])) {
+		printf(" Add clique-cuts: true\n");
+		CLIQUE_CUTS = true;
+	}
+	else {
+		printf(" Add clique-cuts: false\n");
+		CLIQUE_CUTS = false;
+	}
+
 	printf("\n\n");
 
-	// Create the graph
+	// Create the graph CLIQUE_CUTS
 	Graph G(argv[1]);
 
 //	priorityTour(&G);
