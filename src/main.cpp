@@ -37,8 +37,9 @@ unsigned long int K = 4;
 
 // Help solve faster?
 bool MIN_MAX			=	false;	// This is the real objective
-bool INITIAL_SOLUTION	=	true;
-bool CLIQUE_CUTS		=	true;
+bool INITIAL_SOLUTION	=	false;
+bool PRIORITIES			=	false;
+bool CLIQUE_CUTS		=	false;
 
 // Algorithm types, should be odd numbers
 #define MILP_I			1
@@ -1245,13 +1246,40 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 			}
 		}
 
+		if(PRIORITIES) {
+			// Add priorities to the branches that X_ijkv where j services the most sensors
+			printf("Adding branching priorities to X\n");
+			for(HoverLocation hl : vPotentialHL) {
+				for(unsigned long int j = 0; j < N; j++) {
+					for(unsigned long int k = 0; k < K; k++) {
+						for(unsigned long int v = 0; v < V; v++) {
+							X[j][hl.nID][k][v].set(GRB_IntAttr_BranchPriority, vSPerHL.at(hl.nID).size());
+						}
+					}
+				}
+			}
+		}
+
 		if(CLIQUE_CUTS) {
-			// Cut down on groups of HLs that all service the same location
+			// Add a clique-cut to each HL so that at-most one in-bound X == 1
+			printf("Adding clique-cuts to each hovering location\n");
 
-
-
-			// TODO: here!!
-
+			// For each sensor l
+			for(Node l : G->vNodeLst) {
+				GRBLinExpr expr = 0;
+				// For each HL i that services l
+				for(int i : vHLPerS.at(l.getID())) {
+					// Sum on all edges, on all sub-tours, on all vehicles going into i
+					for(unsigned long int j = 0; j < N; j++) {
+						for(unsigned long int k = 0; k < K; k++) {
+							for(unsigned long int v = 0; v < V; v++) {
+								expr += X[j][i][k][v];
+							}
+						}
+					}
+				}
+				model.addConstr(expr <= 1, "X_j_i_k_v_leq_1_for_"+itos(l.getID()));
+			}
 		}
 
 		/// Constraints
@@ -1967,7 +1995,7 @@ void findRadiusPaths(Graph* G) {
 
 int main(int argc, char *argv[]) {
 	// Verify user input
-	if(argc != 4) {
+	if(argc != 6) {
 		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
 		return 1;
 	}
@@ -1991,9 +2019,28 @@ int main(int argc, char *argv[]) {
 		printf(" Initial Solution Heuristic: false\n");
 		INITIAL_SOLUTION = false;
 	}
+
+	if(atoi(argv[4])) {
+		printf(" Priority Branching: true\n");
+		PRIORITIES = true;
+	}
+	else {
+		printf(" Priority Branching: false\n");
+		PRIORITIES = false;
+	}
+
+	if(atoi(argv[5])) {
+		printf(" Add clique-cuts: true\n");
+		CLIQUE_CUTS = true;
+	}
+	else {
+		printf(" Add clique-cuts: false\n");
+		CLIQUE_CUTS = false;
+	}
+
 	printf("\n\n");
 
-	// Create the graph
+	// Create the graph CLIQUE_CUTS
 	Graph G(argv[1]);
 
 //	priorityTour(&G);
