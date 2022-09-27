@@ -37,7 +37,7 @@ include_directories(
 )
 
 # list source files here
-set(sources src/main.cpp)
+set(sources src/main.cpp src/pNode.cpp inc/pNode.h src/Roots.cpp inc/Roots.h src/UAV_Stop.cpp inc/UAV_Stop.h)
 
 add_executable(${CMAKE_PROJECT_NAME}
 	${sources}

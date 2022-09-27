@@ -8,101 +8,27 @@
 #include <queue>
 #include <list>
 
+#include "pNode.h"
 #include "HoverLocation.h"
 #include "Graph.h"
 #include "defines.h"
 #include "PathTSP_MIP_PathPlanner.h"
 #include "gurobi_c++.h"
-
-
-#define	MAX_UAV_DIST	10.0
-#define EPSILON			0.0001
-#define INF				1000000000000
-
-// Max UAV velocity and max distance at max velocity
-#define V_MAX			19.0
-#define D_VM			3000.0
-// UAV energy budget
-#define Q				D_VM/V_MAX
-
+#include "Roots.h"
+#include "UAV_Stop.h"
 
 // TODO: Adjust as needed
 unsigned long int V = 2;
 unsigned long int K = 4;
 
-#define PRINT_RESULTS		true
-#define DATA_LOG_LOCATION	"Output/alg_%d.dat"
-#define MAKE_PLOT_FILE		true
-#define PLOT_FILE_LOCATION	"output_path.txt"
+
 
 // Help solve faster?
 bool MIN_MAX			=	false;	// This is the real objective
-bool INITIAL_SOLUTION	=	false;
+bool INITIAL_SOLUTION	=	true;
 bool PRIORITIES			=	false;
 bool CLIQUE_CUTS		=	false;
 
-// Algorithm types, should be odd numbers
-#define MILP_I			1
-#define GREEDY_NN		3
-#define MILP_II			5
-#define ALGORITHM		MILP_II
-
-struct pNode {
-	int nID;
-	int nPriority;
-
-	pNode(int id, int p) {
-		nID = id;
-		nPriority = p;
-	}
-
-	friend bool operator<(const pNode& a, const pNode& b)
-	{
-		return a.nPriority < b.nPriority;
-	}
-};
-
-// Struct to hold two roots of a quadratic equation
-struct Roots {
-	double root1;
-	double root2;
-	bool imaginary;
-
-	Roots() {
-		root1 = 0;
-		root2 = 0;
-		imaginary = false;
-	}
-};
-
-// Struct to hold a UAV stop
-struct UAV_Stop {
-	int nMappedID;
-	double fX;
-	double fY;
-	std::list<int> nodes;
-
-	UAV_Stop(double x, double y) {
-		nMappedID = -1;
-		fX = x;
-		fY = y;
-	}
-
-	UAV_Stop(double x, double y, int mappedID) {
-		nMappedID = mappedID;
-		fX = x;
-		fY = y;
-	}
-
-	UAV_Stop(const UAV_Stop &stp) {
-		nMappedID = stp.nMappedID;
-		fX = stp.fX;
-		fY = stp.fY;
-		for(int n : stp.nodes) {
-			nodes.push_back(n);
-		}
-	}
-};
 
 bool isZero(double c) {
 	return (c < EPSILON) && (c > -EPSILON);
@@ -1500,7 +1426,7 @@ void runHardMILP(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector
 //			}
 
 		// Run for at most 3 hours
-		model.set(GRB_DoubleParam_TimeLimit, 10800);
+		model.set(GRB_DoubleParam_TimeLimit, 10); //TODO: Set time limit to 10800
 		// Use cuts aggressively
 		model.set(GRB_INT_PAR_CUTS, "2");
 
@@ -2032,7 +1958,7 @@ void findRadiusPaths(Graph* G) {
 int main(int argc, char *argv[]) {
 	// Verify user input
 	if(argc != 6) {
-		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
+		printf("Expected use:min-lat <file path> min-max? heuristic? branching? clique-cuts?\n");
 		return 1;
 	}
 
