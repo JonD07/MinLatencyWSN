@@ -32,3 +32,7 @@ Node& Node::operator=(const Node& other)
 double Node::GetDistanceTo(Node* n) {
 	return sqrt(pow((fX - n->fX), 2) + pow((fY - n->fY), 2));
 }
+
+// TODO: Add a log-distance model that accounts for distance and energy
+double Node::sensorCost(Location &i) {return 5;}
+double Node::sensorTime(Location& l) {return 5;}

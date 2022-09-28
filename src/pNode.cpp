@@ -8,7 +8,7 @@
 
 
 pNode::pNode(int id, int p) {
-    nID = id;
+    id = id;
     nPriority = p;
 }
 

@@ -8,12 +8,12 @@
 
 #include <list>
 
+#include "Location.h"
 
-class UAV_Stop {
+
+class UAV_Stop : public Location{
 public:
-    int nMappedID;
-    double fX;
-    double fY;
+    
     std::list<int> nodes;
 
     UAV_Stop(double x, double y);

@@ -11,16 +11,17 @@
 
 #include "defines.h"
 #include "Node.h"
+#include "Location.h"
 
-class HoverLocation {
+class HoverLocation: public Location {
 public:
 	HoverLocation();
 	HoverLocation(int nID, double fX, double fY, double fWeight);
 	~HoverLocation();
 
-	int nID;
-	double fX;
-	double fY;
+	//int nID;
+	//double fX;
+	//double fY;
 	double fWeight;
 
 private:

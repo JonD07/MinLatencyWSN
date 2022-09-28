@@ -12,6 +12,7 @@
 #include <math.h>
 
 #include "defines.h"
+#include "Location.h"
 
 class Node {
 public:
@@ -36,6 +37,10 @@ public:
 	bool Locked() { return bLocked; }
 	// Set node's locked condition
 	void setLocked() { bLocked = true; }
+    //Budget cost to communicate with sensor at location from hovering location l
+    double sensorCost(Location& l);
+    // Actual time to communicate with sensor from UAV stop l
+    double sensorTime(Location& l);
 
 	// Overloaded assignment operator
 	Node& operator=(const Node& other);
