@@ -17,6 +17,9 @@
 #include "UAV_Stop.h"
 #include "Utilities.h"
 #include "Solver.h"
+#include "SolBasicMILP.h"
+#include "SolNearestNeighbor.h"
+#include "SolHardMILP.h"
 
 unsigned long int V = 2;
 unsigned long int K = 4;
@@ -272,22 +275,24 @@ void findRadiusPaths(Graph* G) {
 
 
     /// 3. Solve capacitated VRP
-    Solver S = Solver(G, vPotentialHL, vSPerHL, vHLPerS, vTours, V, K, MIN_MAX, INITIAL_SOLUTION, PRIORITIES, CLIQUE_CUTS);
+    Solver *S;
 
     if(ALGORITHM == MILP_I) {
-        S.runBasicMILP();
+        S = new SolBasicMILP(V, K, MIN_MAX, INITIAL_SOLUTION, PRIORITIES, CLIQUE_CUTS);
     }
     else if(ALGORITHM == GREEDY_NN) {
-        S.runNN();
+        S = new SolNearestNeighbor(V, K, MIN_MAX, INITIAL_SOLUTION, PRIORITIES, CLIQUE_CUTS);
     }
     else if(ALGORITHM == MILP_II) {
-        S.runHardMILP();
+        S = new SolHardMILP(V, K, MIN_MAX, INITIAL_SOLUTION, PRIORITIES, CLIQUE_CUTS);
     }
+
+    S->solve(G, vPotentialHL, vSPerHL, vHLPerS, vTours);
 
 
     // Print Results before improvements
     if(PRINT_RESULTS) {
-        S.printResults(false);
+        S -> printResults(vTours, G, false);
     }
 
 
@@ -468,7 +473,7 @@ void findRadiusPaths(Graph* G) {
 
     // Print Results
     if(PRINT_RESULTS) {
-        S.printResults(true);
+        S -> printResults(vTours, G, true);
     }
 
     // Print Plot data
@@ -485,6 +490,7 @@ void findRadiusPaths(Graph* G) {
         }
         fclose(pOutputFile);
     }
+    delete S;
 }
 
 int main(int argc, char *argv[]) {

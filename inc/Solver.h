@@ -24,11 +24,7 @@
 #include "Utilities.h"
 
 class Solver {
-    Graph* G;
-    std::vector<HoverLocation> &vPotentialHL;
-    std::vector<std::list<int>> &vSPerHL;
-    std::vector<std::list<int>> &vHLPerS;
-    std::vector<std::list<UAV_Stop>> &vTours;
+public:
     // TODO: Adjust as needed
     unsigned long int V;
     unsigned long int K;
@@ -39,16 +35,16 @@ class Solver {
     bool PRIORITIES;
     bool CLIQUE_CUTS;
 
-public:
-    Solver(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL,
-           std::vector<std::list<int>> &vHLPerS, std::vector<std::list<UAV_Stop>> &vTours, unsigned long int V,
-           unsigned long int K, bool MIN_MAX, bool INITIAL_SOLUTION, bool PRIORITIES, bool CLIQUE_CUTS);
 
-    void runBasicMILP();
-    void runNN();
-    void runHardMILP();
+    Solver(unsigned long int V, unsigned long int K, bool MIN_MAX, bool INITIAL_SOLUTION, bool PRIORITIES, bool CLIQUE_CUTS);
+    Solver(const Solver &s);
+    virtual ~Solver();
 
-    void printResults(bool bImproved);
+    virtual void solve(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL,
+                       std::vector<std::list<int>> &vHLPerS, std::vector<std::list<UAV_Stop>> &vTours) = 0;
+
+
+    void printResults(std::vector<std::list<UAV_Stop>> &vTours, Graph* G, bool bImproved);
 
 };
 

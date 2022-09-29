@@ -37,7 +37,7 @@ include_directories(
 )
 
 # list source files here
-set(sources src/main.cpp src/pNode.cpp inc/pNode.h src/Roots.cpp inc/Roots.h src/UAV_Stop.cpp inc/UAV_Stop.h src/Location.cpp inc/Location.h inc/Utilities.h src/Utilities.cpp src/Solver.cpp inc/Solver.h)
+set(sources src/main.cpp src/pNode.cpp inc/pNode.h src/Roots.cpp inc/Roots.h src/UAV_Stop.cpp inc/UAV_Stop.h src/Location.cpp inc/Location.h inc/Utilities.h src/Utilities.cpp src/Solver.cpp inc/Solver.h src/SolBasicMILP.cpp inc/SolBasicMILP.h src/SolNearestNeighbor.cpp inc/SolNearestNeighbor.h inc/SolHardMILP.cpp inc/SolHardMILP.h)
 
 add_executable(${CMAKE_PROJECT_NAME}
 	${sources}
