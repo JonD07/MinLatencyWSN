@@ -2,8 +2,7 @@
 // Created by peter on 9/28/2022.
 //
 
-#ifndef MINLATENCYWSN_SOLVER_H
-#define MINLATENCYWSN_SOLVER_H
+#pragma once
 
 #include <cassert>
 #include <cstdlib>
@@ -22,31 +21,18 @@
 #include "Roots.h"
 #include "UAV_Stop.h"
 #include "Utilities.h"
+#include "Solution.h"
 
 class Solver {
 public:
-    // TODO: Adjust as needed
-    unsigned long int V;
-    unsigned long int K;
+	Solver();
+	Solver(const Solver &s);
+	virtual ~Solver();
 
-    // Help solve faster?
-    bool MIN_MAX;	// This is the real objective
-    bool INITIAL_SOLUTION;
-    bool PRIORITIES;
-    bool CLIQUE_CUTS;
+	// Runs the underlying algorithm
+	Solution* RunSolver(Graph* pG, int nV, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS);
 
-
-    Solver(unsigned long int V, unsigned long int K, bool MIN_MAX, bool INITIAL_SOLUTION, bool PRIORITIES, bool CLIQUE_CUTS);
-    Solver(const Solver &s);
-    virtual ~Solver();
-
-    virtual void solve(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL,
-                       std::vector<std::list<int>> &vHLPerS, std::vector<std::list<UAV_Stop>> &vTours) = 0;
-
-
-    void printResults(std::vector<std::list<UAV_Stop>> &vTours, Graph* G, bool bImproved);
-
+protected:
+	virtual void solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS) = 0;
 };
 
-
-#endif //MINLATENCYWSN_SOLVER_H

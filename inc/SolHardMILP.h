@@ -2,20 +2,24 @@
 // Created by peter on 9/28/2022.
 //
 
-#ifndef MINLATENCYWSN_SOLHARDMILP_H
-#define MINLATENCYWSN_SOLHARDMILP_H
+#pragma once
 
 #include "Solver.h"
 #include "SolNearestNeighbor.h"
 
+#define K	4
+
+// Help solve faster?
+#define MIN_MAX				false // This is the real objective
+#define INITIAL_SOLUTION	true
+#define PRIORITIES			false
+#define CLIQUE_CUTS			false
+
 class SolHardMILP : public Solver{
 public:
-    SolHardMILP(unsigned long int V, unsigned long int K, bool MIN_MAX, bool INITIAL_SOLUTION, bool PRIORITIES, bool CLIQUE_CUTS);
-    SolHardMILP(const Solver &s);
+	SolHardMILP();
+	SolHardMILP(const Solver &s);
 
-    void solve(Graph* G, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL,
-               std::vector<std::list<int>> &vHLPerS, std::vector<std::list<UAV_Stop>> &vTours);
+protected:
+	void solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS);
 };
-
-
-#endif //MINLATENCYWSN_SOLHARDMILP_H
