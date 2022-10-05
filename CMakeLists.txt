@@ -54,6 +54,8 @@ add_executable(${CMAKE_PROJECT_NAME}
 	src/Solution.cpp
 	src/UAV_Stop.cpp
 	src/Utilities.cpp
+	src/Cluster.cpp
+	src/SolClusters.cpp
 )
 
 

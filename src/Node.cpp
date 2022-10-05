@@ -33,4 +33,4 @@ double Node::GetDistanceTo(Node* n) {
 
 // TODO: Add a log-distance model that accounts for distance and energy
 double Node::sensorCost(Location &i) {return 5;}
-double Node::sensorTime(Location& l) {return 5;}
+double Node::sensorTime(Location &l) {return 5;}
