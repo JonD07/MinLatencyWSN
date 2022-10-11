@@ -21,6 +21,8 @@
 #include "SolNearestNeighbor.h"
 #include "SolHardMILP.h"
 #include "Solution.h"
+#include "SolClusters.h"
+
 
 
 // Determines the distance of this tour
@@ -258,7 +260,12 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 	/// 3. Solve capacitated VRP
 	Solver *solver;
 
-	if(algorithm == MILP_I) {
+
+	//TODO Change to be correct....
+	if(true){
+		solver = new SolClusters();
+	}
+	else if(algorithm == MILP_I) {
 		solver = new SolBasicMILP();
 	}
 	else if(algorithm == GREEDY_NN) {
@@ -483,7 +490,7 @@ int main(int argc, char *argv[]) {
 	// TODO: change the input arguments, we want: algorithm selection, num UAV, input file path
 	// Verify user input
 	if(argc != 2) {
-		printf("Expected use:min-lat <file path> min-max? heuristic? \n");
+		printf("Expected use:min-lat <file path> min-max? heuristic? Got %d args, expected 2.\n", argc);
 		return 1;
 	}
 

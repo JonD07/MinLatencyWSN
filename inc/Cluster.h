@@ -3,7 +3,16 @@
 //
 
 #pragma once
+#include <cassert>
+#include <cstdlib>
+#include <cmath>
+#include <sstream>
+#include <fstream>
+#include <stdio.h>
 #include <vector>
+#include <queue>
+#include <list>
+
 
 #include "HoverLocation.h"
 

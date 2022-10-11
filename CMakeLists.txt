@@ -56,7 +56,10 @@ add_executable(${CMAKE_PROJECT_NAME}
 	src/Utilities.cpp
 	src/Cluster.cpp
 	src/SolClusters.cpp
-)
+	src/CluTSPDivision.cpp
+	inc/CluTSPDivision.h
+		src/LKH_TSP_Solver.cpp
+		)
 
 
 if(CXX)
