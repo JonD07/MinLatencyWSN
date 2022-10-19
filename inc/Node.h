@@ -12,11 +12,13 @@
 #include <math.h>
 
 #include "defines.h"
+#include "Location.h"
 
 class Node {
 public:
+	// TODO: Do we need an empty constructor?
 	Node();
-	Node(int id, double x, double y, double r, double p);
+	Node(int id, double x, double y, double r);
 	Node(const Node &n);
 	~Node();
 
@@ -30,18 +32,21 @@ public:
 	double getY() { return fY; }
 	// Get this node's WiFi range
 	double getR() { return fR; }
-	// Get this node's priority
-	double getPriority() { return fP; }
 	// Get node's locked condition
 	bool Locked() { return bLocked; }
 	// Set node's locked condition
 	void setLocked() { bLocked = true; }
+    //Budget cost to communicate with sensor at location from hovering location l
+    double sensorCost(Location& l);
+    // Actual time to communicate with sensor from UAV stop l
+    double sensorTime(Location& l);
 
 	// Overloaded assignment operator
 	Node& operator=(const Node& other);
 
 private:
 	int nID;
-	double fX, fY, fR, fP;
+	double fX, fY, fR;
+	// TODO: I forget why we need this, but we should probably not use this
 	bool bLocked;
 };

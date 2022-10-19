@@ -41,11 +41,25 @@ set(sources src/main.cpp)
 
 add_executable(${CMAKE_PROJECT_NAME}
 	${sources}
-	src/Node.cpp
-	src/HoverLocation.cpp
 	src/Graph.cpp
+	src/HoverLocation.cpp
+	src/Location.cpp
+	src/Node.cpp
 	src/PathTSP_MIP_PathPlanner.cpp
-)
+	src/Roots.cpp
+	src/SolBasicMILP.cpp
+	src/SolHardMILP.cpp
+	src/SolNearestNeighbor.cpp
+	src/Solver.cpp
+	src/Solution.cpp
+	src/UAV_Stop.cpp
+	src/Utilities.cpp
+	src/Cluster.cpp
+	src/SolClusters.cpp
+	src/CluTSPDivision.cpp
+	inc/CluTSPDivision.h
+		src/LKH_TSP_Solver.cpp
+		)
 
 
 if(CXX)

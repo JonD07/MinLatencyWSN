@@ -19,11 +19,11 @@ Graph::Graph(std::string graph_path) {
 		std::getline(file, line);
 		std::stringstream lineStream(line);
 		// Parse line
-		double x, y, r, p;
-		lineStream >> x >> y >> r >> p;
+		double x, y, r;
+		lineStream >> x >> y >> r;
 		if(DEBUG)
-			printf(" (%f, %f), R: %f, P: %f\n", x, y, r, p);
-		vNodeLst.push_back(Node(i,x,y,r,p));
+			printf(" (%f, %f), R: %f\n", x, y, r);
+		vNodeLst.push_back(Node(i,x,y,r));
 	}
 
 	// get the location of the base station
@@ -32,7 +32,7 @@ Graph::Graph(std::string graph_path) {
 	// Parse line
 	double x,y;
 	lineStream >> x >> y;
-	mBaseStation = Node(n, x, y, 0, 0);
+	mBaseStation = Node(n, x, y, 0);
 	if(DEBUG)
 		printf(" bs: (%f, %f)\n |nodesLst| = %ld\n", mBaseStation.getX(), mBaseStation.getY(), vNodeLst.size());
 }

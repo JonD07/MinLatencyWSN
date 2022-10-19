@@ -26,6 +26,7 @@ public:
 	// Vector to hold all of the nodes in this graph
 	std::vector<Node> vNodeLst;
 	// Base station node
+	// TODO: should the base station be Node or one of the waypoint classes?
 	Node mBaseStation;
 private:
 };
