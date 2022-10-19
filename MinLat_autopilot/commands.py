@@ -138,16 +138,15 @@ class Land(Command):
 
 class CollectData(Command):
 	# Collect data from node, with node communication range node_range (for simulation)
-	def __init__(self, node, node_range=0):
+	def __init__(self, node):
 		self.node_ID = node
-		self.node_range = node_range
 		self.east = 0
 		self.north = 0
 		self.thread = None
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatency/MinLat_autopilot/node_info.txt","r+")
+		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -176,17 +175,22 @@ class CollectData(Command):
 	def launchCollection(self):
 		# Start comms process, wait for response
 		print("Starting data collection process")
-		node_dist = abs(math.sqrt(
-			(vehicle.location.local_frame.north - self.north) ** 2 + 
-			(vehicle.location.local_frame.east - self.east) ** 2))
-		# Can we communicate with this node?
-		if not running_sim or not self.node_range < node_dist:
-			child = self.comms_process = sp.Popen(["/home/jonathan/Research/MinLatency/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), str(self.node_collect_time)])
+
+		# Are we running the simulation?
+		if running_sim:
+			dist_to_node = abs(math.sqrt(
+				(vehicle.location.local_frame.north - self.north) ** 2 + 
+				(vehicle.location.local_frame.east - self.east) ** 2 + 
+				(vehicle.location.local_frame.down) ** 2))
+			# Collect data using NS3
+			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-3", "--delay=true"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
-			# Sim-code: we are not in-range of the sensor
-			rc = 1
+			# Collect data using collect_data executable
+			child = sp.Popen(["/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), str(self.node_collect_time)])
+			child.communicate()[0]
+			rc = child.returncode
 
 		# If return on comms process was successful, set success-flag
 		if rc == 0:
@@ -214,16 +218,15 @@ class CollectData(Command):
 class MoveAndCollectData(Command):
 	# Attempt to collect data from node, while moving towards the node 
 	# at altitude alt, with node communication range node_range (for simulation)
-	def __init__(self, node, alt, node_range=0):
+	def __init__(self, node, alt):
 		self.node_ID = node
 		self.east = 0
 		self.north = 0
 		self.up = alt
-		self.node_range = node_range
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatency/MinLat_autopilot/node_info.txt","r+")
+		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -250,11 +253,12 @@ class MoveAndCollectData(Command):
 		if self.node_collect_time is not None:
 			# Attempt to communicate with this node
 			if not self.collect_success and self.launchCollection():
+				print("Connected to node, stopping for data collection")
 				# Made contact, stop and collect data
 				send_stop()
+				self.collect_success = True
 				self.thread = Thread(target=self.collection_thread)
 				self.thread.start()
-				self.collect_success = True
 			else:
 				# Still cannot talk to node...
 				target_dist = abs(math.sqrt(
@@ -272,17 +276,22 @@ class MoveAndCollectData(Command):
 
 	def launchCollection(self):
 		# Start comms process with 0 wait time, wait for response
-		node_dist = abs(math.sqrt(
-			(vehicle.location.local_frame.north - self.north) ** 2 + 
-			(vehicle.location.local_frame.east - self.east) ** 2))
-		# Can we communicate with this node?
-		if not running_sim or not self.node_range < node_dist:
-			child = self.comms_process = sp.Popen(["/home/jonathan/Research/MinLatency/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), "0"])
+		
+		# Are we running the simulation?
+		if running_sim:
+			dist_to_node = abs(math.sqrt(
+				(vehicle.location.local_frame.north - self.north) ** 2 + 
+				(vehicle.location.local_frame.east - self.east) ** 2 + 
+				(vehicle.location.local_frame.down) ** 2))
+			# Attempt to contact node using NS3, disable delay, set data to 1 byte
+			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-3", "--delay=false"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
-			# Sim-code, we are not within range of the node
-			rc = 1
+			# Attempt to contact node using collect_data executable with transmission time = 0
+			child = sp.Popen(["/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), "0"])
+			child.communicate()[0]
+			rc = child.returncode
 
 		# If return on comms process was successful, return true
 		if rc == 0:

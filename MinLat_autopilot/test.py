@@ -1,4 +1,5 @@
 import time
+import subprocess as sp
 from commands import CollectData
 
 if __name__ == '__main__':
@@ -9,18 +10,10 @@ if __name__ == '__main__':
 	# | Set complete-flag, rejoin
 	# On update calls, do nothing
 
-	for i in range(3):
-		command = CollectData(i)
-		print "Initializing command"
-		command.init()
+	# Collect data using NS3
+	# child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor"])
+	child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance=100", "--payload=10000000", "--txpower=5", "--delay=true"])
+	child.communicate()[0]
+	rc = child.returncode
 
-		while not command.is_done():
-			command.update()
-			time.sleep(0.1)
-		
-		if command.collection_success():
-			print "Successfully collected data"
-		else:
-			print "Collection Failed!"
-
-	print "Done!"
+	print("Done! ", rc)
