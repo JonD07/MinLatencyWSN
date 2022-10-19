@@ -3,7 +3,7 @@ CC=g++
 HEADER = include/defines.h 
 CFLAGS = -Wall -Iinclude
 
-build: Client/client.cpp Server/server.cpp $(HEADER)
+build: Client/collect_data.cpp Server/server.cpp $(HEADER)
 	$(CC) $(CFLAGS) -o Client/collect_data Client/collect_data.cpp
 	$(CC) $(CFLAGS) -o Server/server Server/server.cpp
 
