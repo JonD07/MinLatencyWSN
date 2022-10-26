@@ -8,6 +8,7 @@
 
 #include "Utilities.h"
 
+#define DEBUG_ROOTS	DEBUG || 0
 
 class Roots {
 public:

@@ -9,17 +9,18 @@
 #include <list>
 
 #include "Location.h"
+#include "HoverLocation.h"
 
 
 class UAV_Stop : public Location{
 public:
-    
-    std::list<int> nodes;
-
     UAV_Stop(double x, double y);
     UAV_Stop(double x, double y, int mappedID);
     UAV_Stop(const UAV_Stop &stp);
+    UAV_Stop(const Location &loc);
+    UAV_Stop(const HoverLocation &hl);
 
+    std::list<int> nodes;
 };
 
 

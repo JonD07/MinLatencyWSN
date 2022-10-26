@@ -9,7 +9,8 @@
 
 #pragma once
 
-#define DEBUG	1
+#define DEBUG			0
+#define SANITY_PRINT	1
 
 
 #define	MAX_UAV_DIST	10.0
@@ -21,14 +22,16 @@
 #define D_VM			3000.0
 // UAV energy budget
 #define Q				D_VM/V_MAX
+// Battery swap time (in seconds)
+#define BAT_SWAP		90
 
 #define PRINT_RESULTS		true
-#define DATA_LOG_LOCATION	"Output/alg_%d.dat"
+#define DATA_LOG_LOCATION	"Experiment2/alg_%d.dat"
 #define MAKE_PLOT_FILE		true
 #define PLOT_FILE_LOCATION	"output_path.txt"
 
 #define MILP_I			1
-#define GREEDY_NN		3
-#define MILP_II			5
-#define ALGORITHM		MILP_II
+#define GREEDY_NN		2
+#define MILP_II			3
+#define CLUSTERING		4
 

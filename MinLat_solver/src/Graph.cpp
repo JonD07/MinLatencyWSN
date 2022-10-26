@@ -1,7 +1,8 @@
 #include "Graph.h"
 
 Graph::Graph(std::string graph_path) {
-	printf("Creating graph\n");
+	if(SANITY_PRINT)
+		printf("Creating graph\n");
 	// Open file and read in data
 	std::ifstream file(graph_path);
 	std::string line;
@@ -39,8 +40,19 @@ Graph::Graph(std::string graph_path) {
 
 Graph::~Graph() {}
 
-
 void Graph::MarkNode(int id) {
 	vNodeLst.at(id).setLocked();
 }
 
+
+// Returns true if node id has been marked
+bool Graph::IsMark(int id) {
+	return vNodeLst.at(id).Locked();
+}
+
+// Resets which nodes have been marked
+void Graph::ResetMarking() {
+	for(auto it = vNodeLst.begin(); it != vNodeLst.end(); it++) {
+		it->unLock();
+	}
+}

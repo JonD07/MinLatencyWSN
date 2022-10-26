@@ -11,11 +11,16 @@
 class Location {
 public:
     Location(int id, double x, double y);
+    Location(const Location &loc);
+    ~Location();
+
     // Actual time to traverse between two locations
     double edgeTime(Location& i);
     // Budget cost to traverse between two hovering locations
     double edgeCost(Location& i);
-    ~Location();
+    // Measure the Euclidean distance to i
+    double distTo(Location& i);
+
     int nID;
     double fX;
     double fY;

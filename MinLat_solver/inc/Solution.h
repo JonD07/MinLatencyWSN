@@ -20,15 +20,18 @@
 #include "UAV_Stop.h"
 #include "Utilities.h"
 
+#define DEBUG_SOL	DEBUG || 0
+
 class Solution {
 public:
 	Solution(Graph* G, int nV);
 	Solution(const Solution &s);
 	~Solution();
 
-	void printResults();
+	void printResults(double compTime, bool printFile = false, int approach = 99);
+	double GetWorstLatency();
 
-	// List of tours
+	// List of tours. Sub-tours are organized as the order of each UAV
 	std::vector<std::list<UAV_Stop>> vTours;
 	// Pointer to the graph of this solution
 	Graph* m_pG;

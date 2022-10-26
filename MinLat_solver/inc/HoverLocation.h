@@ -17,12 +17,14 @@ class HoverLocation: public Location {
 public:
 	HoverLocation();
 	HoverLocation(int nID, double fX, double fY, double fWeight);
+	HoverLocation(const HoverLocation &hl);
 	~HoverLocation();
 
 	//int nID;
 	//double fX;
 	//double fY;
 	double fWeight;
+    std::list<int> nodes;
 
 private:
 };

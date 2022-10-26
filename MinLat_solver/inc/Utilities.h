@@ -1,9 +1,14 @@
-//
-// Created by peter on 9/28/2022.
-//
+/*
+ * Solver.h
+ *
+ * Created by:	Peter Hall
+ * On: 			9/28/2022
+ *
+ * Description:
+ */
 
-#ifndef MINLATENCYWSN_UTILITIES_H
-#define MINLATENCYWSN_UTILITIES_H
+
+#pragma once
 
 #include <cstdlib>
 #include <cmath>
@@ -15,6 +20,7 @@
 #include <list>
 
 #include "defines.h"
+#include "Location.h"
 
 
 bool isZero(double c);
@@ -25,7 +31,3 @@ std::string itos(int i);
 
 double stopTime(unsigned long int k);
 
-
-
-
-#endif //MINLATENCYWSN_UTILITIES_H
