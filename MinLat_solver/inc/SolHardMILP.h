@@ -10,10 +10,10 @@
 #define K	4
 
 // Help solve faster?
-#define MIN_MAX				false // This is the real objective
+#define MIN_MAX				true // This is the real objective
 #define INITIAL_SOLUTION	true
-#define PRIORITIES			false
-#define CLIQUE_CUTS			false
+#define PRIORITIES			true
+#define CLIQUE_CUTS			true
 
 class SolHardMILP : public Solver{
 public:

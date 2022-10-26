@@ -36,6 +36,8 @@ public:
 	bool Locked() { return bLocked; }
 	// Set node's locked condition
 	void setLocked() { bLocked = true; }
+	// Set node's locked condition
+	void unLock() { bLocked = false; }
     //Budget cost to communicate with sensor at location from hovering location l
     double sensorCost(Location& l);
     // Actual time to communicate with sensor from UAV stop l
@@ -47,6 +49,5 @@ public:
 private:
 	int nID;
 	double fX, fY, fR;
-	// TODO: I forget why we need this, but we should probably not use this
 	bool bLocked;
 };

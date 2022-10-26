@@ -1,6 +1,11 @@
-//
-// Created by peter on 9/28/2022.
-//
+/*
+ * Solver.h
+ *
+ * Created by:	Peter Hall
+ * On: 			9/28/2022
+ *
+ * Description:
+ */
 
 #pragma once
 

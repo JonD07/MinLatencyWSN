@@ -4,7 +4,8 @@
 SolNearestNeighbor::SolNearestNeighbor() {}
 SolNearestNeighbor::SolNearestNeighbor(const Solver &s): Solver(s) {}
 
-void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS) {
+void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL,
+		std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS) {
 	printf("\nRunning Nearest Neighbor\n");
 	// Make a list of hovering locations
 	std::list<HoverLocation> hlList;
