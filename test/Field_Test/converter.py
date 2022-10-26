@@ -13,7 +13,7 @@ def gps_to_cartesian(filename, outputfile):
 
     for i in range(1, len(lines)-1):
         point = lines[i].split()
-        cpoint = [(E_RAD*math.radians(float(point[1]) - float(point0[1]))*math.cos(math.radians(float(point[0]) + float(point0[0]))/2)) , E_RAD*math.radians(float(point[0]) - float(point0[0])), "" if len(point) == 2 else math.sqrt(math.pow(float(point[2]),2) - math.pow(uav_height, 2)) ]
+        cpoint = [(E_RAD*math.radians(float(point[1]) - float(point0[1]))*math.cos(math.radians(float(point[0]) + float(point0[0]))/2)) , E_RAD*math.radians(float(point[0]) - float(point0[0])), "" if len(point) == 3 else math.sqrt(math.pow(float(point[3]),2) - math.pow(uav_height + float(point0[2]) - float(point[2]), 2)) ]
 
         points.append(cpoint)
 
