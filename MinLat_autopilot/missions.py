@@ -39,11 +39,7 @@ def getDroneNumber(drone_number = -1):
 
 
 def getOrbitSet():
-	if running_sim:
-		return 1
-	else:
-		file1 = open("/home/pi/smallsat-autopilot/orbit_set.txt","r+")
-		return file1.readline().strip()
+	return 2
 
 
 def getAodv_hop():
@@ -174,11 +170,11 @@ class CollectWSNData(Mission):
 	CMD_MSN_ALT = 2
 
 	def __init__(self):
-		self.mission_alt = 5
+		self.mission_alt = 50
 		# Add take-off command
 		self.q.append(commands.GainAlt(self.mission_alt))
 		# Get list of commands from file
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/" + str(getOrbitSet()) + "/drone_" + str(getDroneNumber()) + "_0.pln","r+")
+		file1 = open("~/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
 		# Run through each command in list
 		for aline in file1:
 			values = aline.split()
@@ -199,8 +195,9 @@ class CollectWSNData(Mission):
 		file1.close()
 		# Add Return-To-Home command
 		self.q.append(commands.ReturnHome(self.mission_alt))
-		# Add land command
-		self.q.append(commands.Land())
+		if running_sim:
+			# Add land command
+			self.q.append(commands.Land())
 		# Add first command as current command
 		self.command = self.q.popleft()
 

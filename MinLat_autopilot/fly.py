@@ -70,12 +70,9 @@ def start(self, name, channels):
 			start_next_mission(mission=missions.Manual())
 
 		# If Switch D changes
-		elif abs(channels['8'] - state['channels']['8']) > 100:            
-			sb.Popen(["/home/pi/adhoc-routing-framework/field_test/main", missions.getAodv_hop(), sb.check_output('hostname -I', shell = True).strip(), missions.getDroneNumber(0), missions.getOrbitSet()])
-			print "Calling Orbit"
-			print "Ad-hoc in mode "
-			print missions.getAodv_hop()
-			start_next_mission(mission=missions.RunOrbit())
+		elif abs(channels['8'] - state['channels']['8']) > 100:
+			# Start WSN mission
+			start_next_mission(mission=missions.CollectWSNData())
 
 		# Ready to start mission
 		elif not state['mission'] == "READY" and (state['mission'] == None or state['mission'] == "PREARM"): 

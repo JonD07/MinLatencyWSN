@@ -146,7 +146,7 @@ class CollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/node_info.txt","r+")
+		file1 = open("~/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -183,12 +183,12 @@ class CollectData(Command):
 				(vehicle.location.local_frame.east - self.east) ** 2 + 
 				(vehicle.location.local_frame.down) ** 2))
 			# Collect data using NS3
-			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-3", "--delay=true"])
+			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-20", "--delay=true"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
 			# Collect data using collect_data executable
-			child = sp.Popen(["/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), str(self.node_collect_time)])
+			child = sp.Popen(["~/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), str(self.node_collect_time)])
 			child.communicate()[0]
 			rc = child.returncode
 
@@ -226,7 +226,7 @@ class MoveAndCollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/node_info.txt","r+")
+		file1 = open("~/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -289,7 +289,7 @@ class MoveAndCollectData(Command):
 			rc = child.returncode
 		else:
 			# Attempt to contact node using collect_data executable with transmission time = 0
-			child = sp.Popen(["/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), "0"])
+			child = sp.Popen(["~/MinLatencyWSN/MinLat_autopilot/Networking/Client/collect_data", str(self.node_ID), str(self.node_hostname), "0"])
 			child.communicate()[0]
 			rc = child.returncode
 
