@@ -174,7 +174,7 @@ class CollectWSNData(Mission):
 		# Add take-off command
 		self.q.append(commands.GainAlt(self.mission_alt))
 		# Get list of commands from file
-		file1 = open("~/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
+		file1 = open("/home/pi/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
 		# Run through each command in list
 		for aline in file1:
 			values = aline.split()
