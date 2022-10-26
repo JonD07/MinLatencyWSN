@@ -26,4 +26,4 @@ def gps_to_cartesian(filename, outputfile):
 
 
 if __name__ == "__main__":
-    gps_to_cartesian("TestLines_RawGPS.txt", "TestLines_Cartesian.txt")
+    gps_to_cartesian("TestClusters_RawGPS.txt", "TestClusters_Cartesian.txt")
