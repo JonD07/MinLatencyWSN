@@ -6,6 +6,10 @@
 
 #include "Solver.h"
 #include "SolNearestNeighbor.h"
+#include "SolClusters.h"
+
+#define DEBUG_HMILP			DEBUG || 0
+#define PRINT_GAP			1
 
 #define K	4
 

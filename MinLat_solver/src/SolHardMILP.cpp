@@ -154,8 +154,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 
 		/// Add initial solution?
 		if(INITIAL_SOLUTION) {
-			// Create a greed solution to base an initial solution off of
-			SolNearestNeighbor greedy = SolNearestNeighbor(*this);
+			// Create a greed solution to base an initial solution off of SolClusters
+			SolClusters greedy = SolClusters(*this);
 
 			// Use greedy nearest-neighbor approach to find the initial solution
 			Solution* greedySol = greedy.RunSolver(solution->m_pG, solution->m_nV, vPotentialHL, vSPerHL, vHLPerS);
@@ -181,7 +181,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 			}
 
 			// Run through the solution, add the appropriate data to start attributes
-			printf("Heuristic gave us:\n");
+			if(DEBUG_HMILP)
+				printf("Heuristic gave us:\n");
 			for(unsigned long int i = 0; i < greedySol->vTours.size(); i++) {
 				std::list<UAV_Stop> lst = greedySol->vTours.at(i);
 
@@ -192,15 +193,25 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 					next++;
 
 					// Determine which v and k this is
-					int v = i/K;
-					int k = i%K;
-					printf("%ld -> v=%d, k=%d\n", i, v, k);
+					int v = i%solution->m_nV;
+					int k = i/solution->m_nV;
+					if(DEBUG_HMILP)
+						printf("%ld -> v=%d, k=%d\n", i, v, k);
 
+					bool first = true;
 					// Step through tour
 					while(next != lst.end()) {
 						// Add this edge to solver
-						printf(" (%d, %d)", prev->nID, next->nID);
-						X[prev->nID][next->nID][k][v].set(GRB_DoubleAttr_Start, 1.0);
+						if(DEBUG_HMILP)
+							printf(" (%d, %d)", prev->nID, next->nID);
+						if(first) {
+							X[0][next->nID][k][v].set(GRB_DoubleAttr_Start, 1.0);
+							first = false;
+						}
+						else {
+							X[prev->nID][next->nID][k][v].set(GRB_DoubleAttr_Start, 1.0);
+						}
+//						X[prev->nID][next->nID][k][v].set(GRB_DoubleAttr_Start, 1.0);
 
 						// Add which sensors to talk to
 						for(int l : next->nodes) {
@@ -211,7 +222,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 						prev++;
 						next++;
 					}
-					printf("\n");
+					if(DEBUG_HMILP)
+						printf("\n");
 				}
 			}
 
@@ -220,7 +232,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 
 		if(PRIORITIES) {
 			// Add priorities to the branches that X_ijkv where j services the most sensors
-			printf("Adding branching priorities to X\n");
+			if(DEBUG_HMILP)
+				printf("Adding branching priorities to X\n");
 			for(HoverLocation hl : vPotentialHL) {
 				for(unsigned long int j = 0; j < N; j++) {
 					for(unsigned long int k = 0; k < K; k++) {
@@ -234,7 +247,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 
 		if(CLIQUE_CUTS) {
 			// Add a clique-cut to each HL so that at-most one in-bound X == 1
-			printf("Adding clique-cuts to each hovering location\n");
+			if(DEBUG_HMILP)
+				printf("Adding clique-cuts to each hovering location\n");
 
 			// Only let one UAV, on a single sub-tour enter i
 			for(unsigned long int i = 1; i < N-1; i++) {
@@ -252,7 +266,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 			// For each sensor l
 			for(Node l : solution->m_pG->vNodeLst) {
 				GRBLinExpr expr = 0;
-				printf("Clique on %d\n", l.getID());
+				if(DEBUG_HMILP)
+					printf("Clique on %d\n", l.getID());
 				// For each HL i that services l
 				for(int i : vHLPerS.at(l.getID())) {
 					// Check to see if this HL can only service l
@@ -268,7 +283,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 						}
 					}
 				}
-				printf("\n");
+				if(DEBUG_HMILP)
+					printf("\n");
 				model.addConstr(expr <= 1, "X_j_i_k_v_leq_1_for_"+itos(l.getID()));
 			}
 
@@ -471,8 +487,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 //				model.addConstr(expr == 0, "no_X_"+itos(k)+"_0_N");
 //			}
 
-		// Run for at most 3 hours
-		model.set(GRB_DoubleParam_TimeLimit, 10800);
+		// Run for at most 5 minutes
+		model.set(GRB_DoubleParam_TimeLimit, 300);
 		// Use cuts aggressively
 		model.set(GRB_INT_PAR_CUTS, "2");
 
@@ -481,6 +497,21 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 
 		// Extract solution
 		if (model.get(GRB_IntAttr_SolCount) > 0) {
+			if(DEBUG_HMILP)
+				printf("MIP gap: %f\n", model.get(GRB_DoubleAttr_MIPGap));
+
+			if(PRINT_GAP) {
+				// Print results to file
+				FILE* pOutputFile;
+				char buff[100];
+				sprintf(buff, "Experiment2/MILP_GAP.dat");
+				if(SANITY_PRINT)
+					printf("%s\n", buff);
+				pOutputFile = fopen(buff, "a");
+				fprintf(pOutputFile, "%ld %f\n", solution->m_pG->vNodeLst.size(), model.get(GRB_DoubleAttr_MIPGap));
+				fclose(pOutputFile);
+			}
+
 			// Get edge data
 			double**** Xsol = new double***[N];
 			for(unsigned long int i = 0; i < N; i++) {
@@ -533,7 +564,8 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 //				double* WSol = model.get(GRB_DoubleAttr_X, W, V);
 
 			// Print results
-			printf("\nCollect tour:\n");
+			if(DEBUG_HMILP)
+				printf("\nCollect tour:\n");
 			for(unsigned long int k = 0; k < K; k++) {
 				for(unsigned long int v = 0; v < solution->m_nV; v++) {
 					// Make list for sub-tour k
@@ -549,17 +581,20 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 						for(; i < N; i++) {
 							if(Xsol[prevHL][i][k][v] > 0.5) {
 								// Found next hovering-location
-								printf(" %ld-%ld: %ld -> %ld\n", v, k, prevHL, i);
+								if(DEBUG_HMILP)
+									printf(" %ld-%ld: %ld -> %ld\n", v, k, prevHL, i);
 								// Create new UAV stop
 								UAV_Stop tempStop(vPotentialHL[i].fX, vPotentialHL[i].fY);
 								// Determine which sensors we talk to at this hovering location
 								for(unsigned long int l = 0; l < L; l++) {
 									if(Ysol[i][l][k][v] > 0.5) {
-										printf(" %ld-%ld: @ %ld talk to %ld\n", v, k, i, l);
+										if(DEBUG_HMILP)
+											printf(" %ld-%ld: @ %ld talk to %ld\n", v, k, i, l);
 										tempStop.nodes.push_back(l);
 									}
 								}
-								printf(" %ld-%ld: Budget@%ld = %f\n", v, k, i, Zsol[i][k][v]);
+								if(DEBUG_HMILP)
+									printf(" %ld-%ld: Budget@%ld = %f\n", v, k, i, Zsol[i][k][v]);
 								// Update previous
 								prevHL = i;
 								// Add this node to tour
@@ -576,26 +611,33 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 							}
 							else {
 								// Found empty tour
-								printf("* Tour %ld is empty!\n", (v*K + k));
+								if(DEBUG_HMILP)
+									printf("* Tour %ld is empty!\n", (v*K + k));
 								prevHL = N-1;
 								tour_k.push_back(UAV_Stop(vPotentialHL[prevHL].fX,vPotentialHL[prevHL].fY));
 							}
 						}
 					}
 
+//					// If we found a valid tour, add it
+//					if(tour_k.size() > 2) {
+//						solution->vTours.push_back(tour_k);
+//					}
 					solution->vTours.push_back(tour_k);
 				}
 			}
 
 			// Sanity print
-			printf("\nFiltered tour:\n");
-			for(unsigned long int i = 0; i < solution->vTours.size(); i++) {
-				std::list<UAV_Stop> l = solution->vTours.at(i);
-				printf(" %ld: ", i);
-				for(UAV_Stop n : l) {
-					printf("(%f, %f) ", n.fX, n.fY);
+			if(SANITY_PRINT) {
+				printf("\nFiltered tour:\n");
+				for(unsigned long int i = 0; i < solution->vTours.size(); i++) {
+					std::list<UAV_Stop> l = solution->vTours.at(i);
+					printf(" %ld: ", i);
+					for(UAV_Stop n : l) {
+						printf("(%f, %f) ", n.fX, n.fY);
+					}
+					printf("\n");
 				}
-				printf("\n");
 			}
 
 			// Clean-up memory
