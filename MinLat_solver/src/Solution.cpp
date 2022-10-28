@@ -82,7 +82,8 @@ void Solution::printResults(double compTime, bool printFile, int approach) {
 		FILE * pOutputFile;
 		char buff[100];
 		sprintf(buff, DATA_LOG_LOCATION, approach);
-		printf("%s\n", buff);
+		if(SANITY_PRINT)
+			printf("%s\n", buff);
 		pOutputFile = fopen(buff, "a");
 		fprintf(pOutputFile, "%ld %ld %f %f", m_pG->vNodeLst.size(), m_nV, total_duration, max_latency);
 		fprintf(pOutputFile, " %.4f\n", compTime);
@@ -92,6 +93,47 @@ void Solution::printResults(double compTime, bool printFile, int approach) {
 	delete[] uav_total_duration;
 }
 
+// Create the autopilot plan for this solution
+void Solution::printPlan() {
+	// Loop through each tour
+	for(long unsigned int i = 0; i < vTours.size(); i++) {
+		int uavID = (int)i%m_nV;
+		int tourID = (int)i/m_nV;
+
+		// Open plan file
+		FILE * pOutputFile;
+		char buff[100];
+		sprintf(buff, PLAN_FILE_LOCATION, uavID, tourID);
+		printf("%s\n", buff);
+		pOutputFile = fopen(buff, "w");
+
+		// Set default altitude
+		fprintf(pOutputFile, "2 50\n");
+
+		// Walk through list, skipping the first stop (base station)
+		std::list<UAV_Stop>::iterator it = vTours.at(i).begin();
+		it++;
+
+		// Write out plan
+		while(it != vTours.at(i).end()) {
+			// If BS, skip (BS has not nodes)
+			if(it->nodes.size() != 0) {
+				// Add HL as waypoint
+				fprintf(pOutputFile, "0 %f %f 50\n", it->fX, it->fY);
+
+				// Which nodes to talk to
+				for(int n : it->nodes) {
+					fprintf(pOutputFile, "1 %d\n", n);
+				}
+			}
+
+			it++;
+		}
+
+		// Close file
+		fclose(pOutputFile);
+	}
+}
 
 double Solution::GetWorstLatency() {
 	// Check each sub-tour to find worst latency

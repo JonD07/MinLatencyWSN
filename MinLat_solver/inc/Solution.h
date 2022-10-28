@@ -29,6 +29,7 @@ public:
 	~Solution();
 
 	void printResults(double compTime, bool printFile = false, int approach = 99);
+	void printPlan();
 	double GetWorstLatency();
 
 	// List of tours. Sub-tours are organized as the order of each UAV

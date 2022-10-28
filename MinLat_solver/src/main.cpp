@@ -27,7 +27,7 @@
 #include "SolClusters.h"
 
 #define DEBUG_MAIN	DEBUG || 0
-#define DEBUG_IMPR	DEBUG || 1
+#define DEBUG_IMPR	DEBUG || 0
 
 
 // Determines the distance of this tour
@@ -335,6 +335,8 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 					if(DEBUG_IMPR)
 						printf("  Pretending to remove (%f, %f)\n", middle->fX, middle->fY);
 
+					bool madeChang = false;
+
 					// For each sensor
 					UAV_Stop tempOld = *middle;
 					for(int n : tempOld.nodes) {
@@ -396,6 +398,7 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 									if(DEBUG_IMPR)
 										printf("    Update helped!\n");
 									runAgain = true;
+									madeChang = true;
 									break;
 								}
 								else {
@@ -410,7 +413,8 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 							}
 							else {
 								// We can't easily swap out the two stops...
-								printf("    No easy swap, try walking along f(x) = mx + b\n");
+								if(DEBUG_IMPR)
+									printf("    No easy swap, try walking along f(x) = mx + b\n");
 
 								// Vector from ( x_p, y_p ) to ( x_b, y_b )
 								double a_1 = x_p - x_b;
@@ -463,6 +467,7 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 										if(DEBUG_IMPR)
 											printf("      * Update helped!\n");
 										runAgain = true;
+										madeChang = true;
 										break;
 									}
 									else {
@@ -516,6 +521,7 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 											if(DEBUG_IMPR)
 												printf("      * Update helped!\n");
 											runAgain = true;
+											madeChang = true;
 											break;
 										}
 										else {
@@ -531,7 +537,7 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 								}
 							}
 						}
-						else {
+						if(!madeChang) {
 							// Find point along radius that is in-range
 							double x_1 = x_p - x_v;
 							double x_2 = y_p - y_v;
@@ -576,6 +582,7 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 									if(DEBUG_IMPR)
 										printf("    Update helped!\n");
 									runAgain = true;
+									madeChang = true;
 									break;
 								}
 								else {
@@ -594,6 +601,153 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 									printf("    No easy swap\n");
 							}
 						}
+					}
+
+					// If we still haven't found a good change...
+					if(!madeChang) {
+						// Check corners
+						if(DEBUG_IMPR)
+							printf(" Try corners\n");
+
+						for(std::list<int>::iterator itA = tempOld.nodes.begin(); itA != tempOld.nodes.end(); itA++) {
+							for(std::list<int>::iterator itB = std::next(itA, 1); itB != tempOld.nodes.end(); itB++) {
+								Node u = G->vNodeLst.at(*itA);
+								Node v = G->vNodeLst.at(*itB);
+
+								// Find overlapping points
+								Roots y_roots;
+								Roots x_roots;
+								findOverlapPoints(&v, &u, &x_roots, &y_roots);
+
+								// Add the two overlapping points to the solution
+								if(!x_roots.imaginary & !y_roots.imaginary) {
+									{
+										// Try moving HL to these two points
+										if(DEBUG_MAIN)
+											printf("  Trying corner @ (%f, %f)\n", x_roots.root1, y_roots.root1);
+										// Get total distance of current tour
+										double oldDist = tourDist(solution->vTours.at(i));
+										// Hold onto old stop
+										UAV_Stop oldStop(*middle);
+										// Create new UAV stop
+										UAV_Stop tempStop(x_roots.root1, y_roots.root1);
+										// Determine which sensors we talk to at this hovering location
+										for(int n : oldStop.nodes) {
+											if(distAtoB(G->vNodeLst[n].getX(), G->vNodeLst[n].getY(),
+														tempStop.fX, tempStop.fY) <= (G->vNodeLst[n].getR() + EPSILON)) {
+												if(DEBUG_IMPR)
+													printf("   talk to %d\n", n);
+												tempStop.nodes.push_back(n);
+											}
+										}
+										// Make sure that we have the entire list...
+										if(oldStop.nodes.size() == tempStop.nodes.size()) {
+											if(DEBUG_IMPR)
+												printf("  Easy swap!\n");
+											// Add this stop to the tour, remove current middle
+											solution->vTours.at(i).erase(middle);
+											middle = front;
+											// Add new stop
+											solution->vTours.at(i).insert(middle, tempStop);
+											// Correct iterator's position
+											middle--;
+											// Check new tour's distance
+											double newDist = tourDist(solution->vTours.at(i));
+											// See if we made an improvement
+											if(newDist < oldDist) {
+												// Great!
+												if(DEBUG_IMPR)
+													printf("   Update helped!\n");
+												runAgain = true;
+												madeChang = true;
+												break;
+											}
+											else {
+												// Adding the new stop didn't help.. remove it
+												if(DEBUG_IMPR)
+													printf("   No improvement\n");
+												solution->vTours.at(i).erase(middle);
+												middle = front;
+												solution->vTours.at(i).insert(middle, oldStop);
+												middle--;
+											}
+										}
+										else {
+											// We can't easily swap out the two stops...
+											if(DEBUG_IMPR)
+												printf("  Corner is out-of-range for other nodes\n");
+										}
+									}
+
+									if(!madeChang) {
+										// Try moving HL to these two points
+										if(DEBUG_MAIN)
+											printf("  Trying corner @ (%f, %f)\n", x_roots.root2, y_roots.root2);
+										// Get total distance of current tour
+										double oldDist = tourDist(solution->vTours.at(i));
+										// Hold onto old stop
+										UAV_Stop oldStop(*middle);
+										// Create new UAV stop
+										UAV_Stop tempStop(x_roots.root2, y_roots.root2);
+										// Determine which sensors we talk to at this hovering location
+										for(int n : oldStop.nodes) {
+											if(distAtoB(G->vNodeLst[n].getX(), G->vNodeLst[n].getY(),
+														tempStop.fX, tempStop.fY) <= (G->vNodeLst[n].getR() + EPSILON)) {
+												if(DEBUG_IMPR)
+													printf("   talk to %d\n", n);
+												tempStop.nodes.push_back(n);
+											}
+										}
+										// Make sure that we have the entire list...
+										if(oldStop.nodes.size() == tempStop.nodes.size()) {
+											if(DEBUG_IMPR)
+												printf("  Easy swap!\n");
+											// Add this stop to the tour, remove current middle
+											solution->vTours.at(i).erase(middle);
+											middle = front;
+											// Add new stop
+											solution->vTours.at(i).insert(middle, tempStop);
+											// Correct iterator's position
+											middle--;
+											// Check new tour's distance
+											double newDist = tourDist(solution->vTours.at(i));
+											// See if we made an improvement
+											if(newDist < oldDist) {
+												// Great!
+												if(DEBUG_IMPR)
+													printf("   Update helped!\n");
+												runAgain = true;
+												madeChang = true;
+												break;
+											}
+											else {
+												// Adding the new stop didn't help.. remove it
+												if(DEBUG_IMPR)
+													printf("   No improvement\n");
+												solution->vTours.at(i).erase(middle);
+												middle = front;
+												solution->vTours.at(i).insert(middle, oldStop);
+												middle--;
+											}
+										}
+										else {
+											// We can't easily swap out the two stops...
+											if(DEBUG_IMPR)
+												printf("  Corner is out-of-range for other nodes\n");
+										}
+									}
+
+
+//									vPotentialHL.push_back(HoverLocation(id++, x_roots.root1, y_roots.root1,
+//																		 distAtoB(x_roots.root1, y_roots.root1, G->mBaseStation.getX(), G->mBaseStation.getY())));
+//									vPotentialHL.push_back(HoverLocation(id++, x_roots.root2, y_roots.root2,
+//																		 distAtoB(x_roots.root2, y_roots.root2, G->mBaseStation.getX(), G->mBaseStation.getY())));
+								}
+							}
+						}
+
+
+
 					}
 
 					// Update iterators
@@ -629,7 +783,11 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 	double duration_s = (double)duration/1000.0;
 
 	// Print Results
-	solution->printResults(duration_s, true, algorithm);
+	solution->printResults(duration_s, PRINT_RESULTS, algorithm);
+	if(MAKE_PLAN_FILE) {
+		// Create the autopilot plan file
+		solution->printPlan();
+	}
 
 	// Print Plot data
 	if(MAKE_PLOT_FILE) {

@@ -23,7 +23,7 @@ sensorArray = []
 pathArray = []
 
 # Get sensor data from file
-with open('test2.txt') as f:
+with open('Experiment2/plot_20_0.txt') as f:
 	n = [int(x) for x in next(f).split()] # read first line3
 	print(n)
 	for i in range(n[0]):

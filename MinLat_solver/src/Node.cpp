@@ -31,6 +31,11 @@ double Node::GetDistanceTo(Node* n) {
 	return sqrt(pow((fX - n->fX), 2) + pow((fY - n->fY), 2));
 }
 
-// TODO: Add a log-distance model that accounts for distance and energy
-double Node::sensorCost(Location &i) {return 5;}
+// Budget cost to collect data from this node: t * s_m/s_h,
+// which is [ t * (total time moving at V_MAX)/(total hovering time) ]
+double Node::sensorCost(Location &i) {
+	return sensorTime(i)*((Q) / (HOVER_TIME));
+}
+
+// Actual hovering time, in seconds
 double Node::sensorTime(Location &l) {return 5;}
