@@ -10,7 +10,7 @@ Build the executable, then move it to
 
 Add the following line to your .bashrc file:
 
-`export PATH="/home/$USER/bin:$PATH`
+`export PATH="/home/$USER/bin:$PATH"`
 
 ### Build solver
 Create a new directory from the root directory to run build commands
