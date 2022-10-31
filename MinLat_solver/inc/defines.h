@@ -39,4 +39,5 @@
 #define GREEDY_NN		2
 #define MILP_II			3
 #define CLUSTERING		4
+#define DIV_GREEDY		5
 

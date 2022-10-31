@@ -43,6 +43,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 	${sources}
 	src/Cluster.cpp
 	src/CluTSPDivision.cpp
+	src/SolDivideGreedy.cpp
 	src/Graph.cpp
 	src/Graph_Theory.cpp
 	src/HoverLocation.cpp

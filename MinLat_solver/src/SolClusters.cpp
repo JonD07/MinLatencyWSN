@@ -35,8 +35,6 @@ void SolClusters::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 	bool runAgain = true;
 	Solution* pBestSolution = NULL;
 
-	// TODO: Add energy check
-
 	// Store the given parameters, we will be manipulating them
 	m_vPotentialHL = vPotentialHL;
 	m_vSPerHL = vSPerHL;

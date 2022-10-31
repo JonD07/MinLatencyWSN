@@ -25,6 +25,8 @@
 #include "SolNearestNeighbor.h"
 #include "SolHardMILP.h"
 #include "SolClusters.h"
+#include "SolDivideGreedy.h"
+
 
 #define DEBUG_MAIN	DEBUG || 0
 #define DEBUG_IMPR	DEBUG || 0
@@ -298,6 +300,9 @@ void findRadiusPaths(Graph* G, int algorithm, int numUAVs) {
 	}
 	else if(algorithm == CLUSTERING) {
 		solver = new SolClusters();
+	}
+	else if(algorithm == DIV_GREEDY) {
+		solver = new SolDivideGreedy();
 	}
 	else {
 		// Default to greedy algorithm
