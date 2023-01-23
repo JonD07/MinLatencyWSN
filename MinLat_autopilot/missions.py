@@ -7,6 +7,7 @@ import subprocess as sb
 from collections import deque
 import time
 import numpy as np
+import defines
 
 
 
@@ -180,7 +181,7 @@ class CollectWSNData(Mission):
 		# Add Timer-Start command
 		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
+		file1 = open(defines.MISSION_PATH + "drone_0_0.pln","r+")
 		# Node power-settings
 		self.nPowers = {-1: 0}
 		# Run through each command in list
@@ -192,6 +193,7 @@ class CollectWSNData(Mission):
 				self.q.append(commands.WaypointDist(float(values[1]), float(values[2]), float(values[3])))
 			# else if cmd = 1 (data collection)
 			elif int(values[0]) == self.CMD_COLL_DATA:
+				print(values)
 				# TODO: Add a normal-distribution for the nodes range
 				arr = np.random.normal(float(values[2]) - 1, 8, 1)
 				self.nPowers[int(values[1])] = arr[0]

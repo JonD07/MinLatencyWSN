@@ -5,6 +5,7 @@ import math
 import time
 import subprocess as sp
 from threading import Thread, Event
+import defines
 
 def setSimulation(sim):
 	global running_sim
@@ -167,7 +168,7 @@ class CollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
+		file1 = open( defines.MISSION_PATH + "node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -204,7 +205,7 @@ class CollectData(Command):
 				(vehicle.location.local_frame.east - self.east) ** 2 + 
 				(vehicle.location.local_frame.down) ** 2))
 			# Collect data using NS3
-			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=true"])
+			child = sp.Popen([defines.NS_3_PATH, "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=true"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
@@ -248,7 +249,7 @@ class MoveAndCollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
+		file1 = open(defines.MISSION_PATH + "node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -306,7 +307,7 @@ class MoveAndCollectData(Command):
 				(vehicle.location.local_frame.east - self.east) ** 2 + 
 				(vehicle.location.local_frame.down) ** 2))
 			# Attempt to contact node using NS3, disable delay, set data to 1 byte
-			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=false"])
+			child = sp.Popen([defines.NS_3_PATH, "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=false"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
