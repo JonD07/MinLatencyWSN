@@ -50,8 +50,8 @@ def init():
 	print(" Home location: %s" % vehicle.home_location)
 
 	# Program-specific constants and configuration
-	vehicle.airspeed = 11 # m/s
-	vehicle.groundspeed = 11 # m/s
+	vehicle.airspeed = 10 # m/s
+	vehicle.groundspeed = 10 # m/s
 
 	state = {
 		'mission': None,

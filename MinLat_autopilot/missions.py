@@ -5,14 +5,16 @@ import queue
 import commands
 import subprocess as sb
 from collections import deque
+import time
+import numpy as np
 
 
 
 def setSimulation(sim):
 	global running_sim
 	running_sim = sim
-	if running_sim:
-		import numpy as np
+	# if running_sim:
+	# 	import numpy as np
 
 
 #Methods get the Drone number and the orbit set from text files on the drone in order to prevent
@@ -168,13 +170,19 @@ class CollectWSNData(Mission):
 	CMD_WAYPOINT = 0
 	CMD_COLL_DATA = 1
 	CMD_MSN_ALT = 2
+	start_time = 0
+	end_time = 0
 
 	def __init__(self):
 		self.mission_alt = 50
 		# Add take-off command
 		self.q.append(commands.GainAlt(self.mission_alt))
+		# Add Timer-Start command
+		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open("/home/pi/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
+		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/drone_0_0.pln","r+")
+		# Node power-settings
+		self.nPowers = {-1: 0}
 		# Run through each command in list
 		for aline in file1:
 			values = aline.split()
@@ -185,8 +193,10 @@ class CollectWSNData(Mission):
 			# else if cmd = 1 (data collection)
 			elif int(values[0]) == self.CMD_COLL_DATA:
 				# TODO: Add a normal-distribution for the nodes range
+				arr = np.random.normal(float(values[2]) - 1, 8, 1)
+				self.nPowers[int(values[1])] = arr[0]
 				# Add collect data command
-				self.q.append(commands.CollectData(int(values[1])))
+				self.q.append(commands.CollectData(int(values[1]), arr[0]))
 			elif int(values[0]) == self.CMD_MSN_ALT:
 				# Set mission altitude
 				self.mission_alt = float(values[1])
@@ -195,11 +205,15 @@ class CollectWSNData(Mission):
 		file1.close()
 		# Add Return-To-Home command
 		self.q.append(commands.ReturnHome(self.mission_alt))
+		# Add Timer-Stop command
+		self.q.append(commands.StopTimer())
 		if running_sim:
 			# Add land command
 			self.q.append(commands.Land())
 		# Add first command as current command
 		self.command = self.q.popleft()
+		print("Node power settings")
+		print(self.nPowers)
 
 	def update(self):
 		if isinstance(self.command, commands.CollectData):
@@ -217,13 +231,25 @@ class CollectWSNData(Mission):
 					# Done collecting data at this point, start recovery
 					while self.missed_q:
 						print("Added move-collect command")
+						n = self.missed_q.pop()
 						# Add moving-collecting from this node to the command queue
-						self.q.appendleft(commands.MoveAndCollectData(self.missed_q.pop(), self.mission_alt))
+						self.q.appendleft(commands.MoveAndCollectData(n, self.mission_alt, self.nPowers[n]))
 		# Check to see if we just finished a move-collect command
 		if isinstance(self.command, commands.MoveAndCollectData):
 			# Check if this was the last move-collect command
 			if not isinstance(self.q[0], commands.MoveAndCollectData):
 				# TODO: Update the next waypoint
 				pass
+		if isinstance(self.command, commands.StartTimer):
+			self.start_time = time.time()
+			print("Starting Timer")
+		if isinstance(self.command, commands.StopTimer):
+			self.end_time = time.time()
+			print("Stopping Timer")
+			lapsed = self.end_time - self.start_time
+			print(lapsed)
+			f = open("flight-time.dat", "a")
+			f.write(str(lapsed) + "\n")
+			f.close()
 
 		super(CollectWSNData, self).update()

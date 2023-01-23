@@ -52,6 +52,26 @@ class GainAlt(Command):
 		diff = abs(vehicle.location.global_relative_frame.alt - self.target_altitude)
 		return diff < 0.5
 
+class StartTimer(Command):
+	def __init__(self):
+		pass
+
+	def init(self):
+		pass
+
+	def is_done(self):
+		return True
+
+class StopTimer(Command):
+	def __init__(self):
+		pass
+
+	def init(self):
+		pass
+
+	def is_done(self):
+		return True
+
 
 class WaypointDist(Command):
 	def __init__(self, east, north, up):
@@ -138,15 +158,16 @@ class Land(Command):
 
 class CollectData(Command):
 	# Collect data from node, with node communication range node_range (for simulation)
-	def __init__(self, node):
+	def __init__(self, node, power):
 		self.node_ID = node
+		self.power = power
 		self.east = 0
 		self.north = 0
 		self.thread = None
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/pi/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
+		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -183,7 +204,7 @@ class CollectData(Command):
 				(vehicle.location.local_frame.east - self.east) ** 2 + 
 				(vehicle.location.local_frame.down) ** 2))
 			# Collect data using NS3
-			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-20", "--delay=true"])
+			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=true"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
@@ -218,15 +239,16 @@ class CollectData(Command):
 class MoveAndCollectData(Command):
 	# Attempt to collect data from node, while moving towards the node 
 	# at altitude alt, with node communication range node_range (for simulation)
-	def __init__(self, node, alt):
+	def __init__(self, node, alt, power):
 		self.node_ID = node
+		self.power = power
 		self.east = 0
 		self.north = 0
 		self.up = alt
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open("/home/pi/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
+		file1 = open("/home/jonathan/Research/MinLatencyWSN/MinLat_autopilot/Missions/2/node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -284,7 +306,7 @@ class MoveAndCollectData(Command):
 				(vehicle.location.local_frame.east - self.east) ** 2 + 
 				(vehicle.location.local_frame.down) ** 2))
 			# Attempt to contact node using NS3, disable delay, set data to 1 byte
-			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=10000000", "--txpower=-3", "--delay=false"])
+			child = sp.Popen(["/home/jonathan/Research/Tools/ns-allinone-3.36.1/ns-3.36.1/ns3", "run", "scratch/drone-to-sensor", "--", "--distance="+str(dist_to_node), "--payload=5000000", "--txpower="+str(self.power), "--delay=false"])
 			child.communicate()[0]
 			rc = child.returncode
 		else:
