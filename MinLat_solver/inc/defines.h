@@ -10,7 +10,7 @@
 #pragma once
 
 #define DEBUG			0
-#define SANITY_PRINT	0
+#define SANITY_PRINT	1
 
 
 #define EPSILON			0.0001
@@ -39,5 +39,7 @@
 #define GREEDY_NN		2
 #define MILP_II			3
 #define CLUSTERING		4
-#define DIV_GREEDY		5
+#define DIV_GREEDY_IMPR	5
+#define DIV_GREEDY		6
+#define DIV_GREEDY_ABV	7
 
