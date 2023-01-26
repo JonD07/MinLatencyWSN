@@ -133,14 +133,14 @@ void findOverlapPoints(Node* v, Node* u, Roots* x_roots, Roots* y_roots) {
 	}
 }
 
-void setHLAll(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<std::list<int>>& vSPerHL, std::vector<std::list<int>>& vHLPerS) {
+void setHLAllCombos(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<std::list<int>>& vSPerHL, std::vector<std::list<int>>& vHLPerS) {
 	// Hovering location ID tracker
 	int id = 0;
 
 	// Add base-station as first hovering location
 	vPotentialHL.push_back(HoverLocation(id++, G->mBaseStation.getX(), G->mBaseStation.getY(), 0));
 
-	/// 1. Form list of potential hovering-locations
+	// For each node
 	for(Node v : G->vNodeLst) {
 		/// Consider "directly above" as a potential hovering location
 		if(DEBUG_MAIN)
@@ -220,7 +220,6 @@ void setHLAll(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<st
 	// Add base-station as the last hovering location
 	vPotentialHL.push_back(HoverLocation(id++, G->mBaseStation.getX(), G->mBaseStation.getY(), 0));
 
-	/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
 	// For each hovering location
 	for(HoverLocation hl : vPotentialHL) {
 		if(DEBUG_MAIN)
@@ -266,7 +265,7 @@ void setHLAll(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<st
 	}
 }
 
-void setHLOverNodes(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<std::list<int>>& vSPerHL, std::vector<std::list<int>>& vHLPerS) {
+void setHLAboveNodes(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vector<std::list<int>>& vSPerHL, std::vector<std::list<int>>& vHLPerS) {
 	// Hovering location ID tracker
 	int id = 0;
 
@@ -283,8 +282,7 @@ void setHLOverNodes(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vec
 		vHLPerS.push_back(hlList);
 	}
 
-	/// 1. Form list of potential hovering-locations
-	/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+	// For each node
 	for(Node v : G->vNodeLst) {
 		/// Consider "directly above" as a potential hovering location
 		if(DEBUG_MAIN)
@@ -324,7 +322,6 @@ void setHLOverNodes(Graph* G, std::vector<HoverLocation>& vPotentialHL, std::vec
 }
 
 void improveRoute(Graph* G, Solution* solution) {
-	/// 4. Improve route
 	if(SANITY_PRINT)
 		printf("\nImprove route\n");
 	for(unsigned long int i = 0; i < solution->vTours.size(); i++) {
@@ -828,72 +825,160 @@ void solveGraph(Graph* G, int algorithm, int numUAVs) {
 	auto start = std::chrono::high_resolution_clock::now();
 	Solution* solution = NULL;
 
+	// Run given algorithm combination
 	switch(algorithm) {
-	case MILP_I:
+	case ALG_COMBO_AC_MILP_I:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
 		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
-		/// 3. Solve capacitated VRP
-		solver = new SolBasicMILP();
-		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
-		// Print Results before improvements
-		solution->printResults(0, false, algorithm);
-		improveRoute(G, solution);
-		break;
-	case GREEDY_NN:
-		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
-		/// 3. Solve capacitated VRP
-		solver = new SolNearestNeighbor();
-		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
-		// Print Results before improvements
-		solution->printResults(0, false, algorithm);
-		improveRoute(G, solution);
-		break;
-	case MILP_II:
-		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+
 		/// 3. Solve capacitated VRP
 		solver = new SolHardMILP();
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
 		// Print Results before improvements
 		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
 		improveRoute(G, solution);
 		break;
-	case CLUSTERING:
+
+	case ALG_COMBO_AC_NN_I:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
 		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+		/// 3. Solve capacitated VRP
+		solver = new SolNearestNeighbor();
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		// Print Results before improvements
+		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
+		improveRoute(G, solution);
+
+		break;
+
+	case ALG_COMBO_AN_CL_NI:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
 		/// 3. Solve capacitated VRP
 		solver = new SolClusters();
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		break;
+
+	case ALG_COMBO_AN_CL_I:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolClusters();
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
 		// Print Results before improvements
 		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
 		improveRoute(G, solution);
+
 		break;
-	case DIV_GREEDY_IMPR:
-		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
+
+	case ALG_COMBO_AN_DG_NI:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
 		/// 3. Solve capacitated VRP
 		solver = new SolDivideGreedy();
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
-		// Print Results before improvements
-		solution->printResults(0, false, algorithm);
-		improveRoute(G, solution);
+
 		break;
-	case DIV_GREEDY:
-		// Select hovering locations
-		setHLAll(G, vPotentialHL, vSPerHL, vHLPerS);
+
+	case ALG_COMBO_AN_DG_I:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
 		/// 3. Solve capacitated VRP
 		solver = new SolDivideGreedy();
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		// Print Results before improvements
+		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
+		improveRoute(G, solution);
+
 		break;
-	case DIV_GREEDY_ABV:
+
+	case ALG_COMBO_AC_CL_NI:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolClusters();
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		break;
+
+	case ALG_COMBO_AC_CL_I:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolClusters();
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		// Print Results before improvements
+		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
+		improveRoute(G, solution);
+
+		break;
+
+	case ALG_COMBO_AC_DG_NI:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolDivideGreedy();
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		break;
+
+	case ALG_COMBO_AC_DG_I:
 	default:
-		// Select hovering locations
-		setHLOverNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
+
 		/// 3. Solve capacitated VRP
 		solver = new SolDivideGreedy();
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
-		break;
+
+		// Print Results before improvements
+		solution->printResults(0, false, algorithm);
+
+		/// 4. Improve route
+		improveRoute(G, solution);
 	}
 
 	// Capture end time
@@ -910,10 +995,9 @@ void solveGraph(Graph* G, int algorithm, int numUAVs) {
 }
 
 int main(int argc, char *argv[]) {
-	int algorithm = GREEDY_NN;
+	int algorithm = ALG_COMBO_AC_NN_I;
 	int numUAVs = 2;
 
-	// TODO: change the input arguments, we want: algorithm selection, num UAV, input file path
 	// Verify user input
 	if(argc < 2) {
 		printf("Received %d args, expected 2 or more.\nExpected use:\t./min-lat <file path> [algorithm] [number of UAVs]\n\n", (argc-1));
