@@ -5,7 +5,7 @@ echo "Running MinLat Experiment 2: fixed v"
 
 # Default settings:
 # n = 50
-# v = 4
+# v = 3
 # d = 150
 
 

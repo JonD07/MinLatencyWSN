@@ -5,7 +5,7 @@ echo "Running MinLat Experiment 2: fixed v"
 
 # Default settings:
 # n = 50
-# v = 4
+# v = 3
 # d = 150
 
 for n in 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200
@@ -16,7 +16,7 @@ do
 		do
 			echo "Running ALG_COMBO_AN_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_NI on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 2 4 >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 2 3 >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -30,7 +30,7 @@ do
 		do
 			echo "Running ALG_COMBO_AN_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_I on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 3 4 >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 3 3 >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -42,7 +42,7 @@ do
 	do
 		echo "Running ALG_COMBO_AN_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_NI on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 4 4 >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 4 3 >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -53,7 +53,7 @@ do
 	do
 		echo "Running ALG_COMBO_AN_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_I on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 5 4 >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 5 3 >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -66,7 +66,7 @@ do
 		do
 			echo "Running ALG_COMBO_AC_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_NI on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 6 4 >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 6 3 >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -80,7 +80,7 @@ do
 		do
 			echo "Running ALG_COMBO_AC_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_I on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 7 4 >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 7 3 >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -92,7 +92,7 @@ do
 	do
 		echo "Running ALG_COMBO_AC_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_NI on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 8 4 >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 8 3 >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -103,7 +103,7 @@ do
 	do
 		echo "Running ALG_COMBO_AC_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_I on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 9 4 >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 9 3 >> Experiment1/run_output.txt &
 		wait
 	done
 done
