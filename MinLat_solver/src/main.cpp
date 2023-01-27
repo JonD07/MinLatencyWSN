@@ -784,11 +784,11 @@ void improveRoute(Graph* G, Solution* solution) {
 	}
 }
 
-void printResults(Solution* solution, int nApproach, double duration_s) {
+void printResults(Solution* solution, int nApproach, double duration_s, int nodeDensity) {
 	assert(solution != NULL);
 
 	// Print Results
-	solution->printResults(duration_s, PRINT_RESULTS, nApproach);
+	solution->printResults(duration_s, PRINT_RESULTS, nApproach, nodeDensity);
 	if(MAKE_PLAN_FILE) {
 		// Create the autopilot plan file
 		solution->printPlan();
@@ -810,7 +810,7 @@ void printResults(Solution* solution, int nApproach, double duration_s) {
 	}
 }
 
-void solveGraph(Graph* G, int algorithm, int numUAVs) {
+void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity) {
 	// Pointer to the solver
 	Solver *solver;
 
@@ -987,7 +987,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs) {
 	long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 	// Runtime duration
 	double duration_s = (double)duration/1000.0;
-	printResults(solution, algorithm, duration_s);
+	printResults(solution, algorithm, duration_s, nodeDensity);
 
 	// Memory cleanup
 	delete solution;
@@ -997,10 +997,11 @@ void solveGraph(Graph* G, int algorithm, int numUAVs) {
 int main(int argc, char *argv[]) {
 	int algorithm = ALG_COMBO_AC_NN_I;
 	int numUAVs = 2;
+	int density = 150;
 
 	// Verify user input
 	if(argc < 2) {
-		printf("Received %d args, expected 2 or more.\nExpected use:\t./min-lat <file path> [algorithm] [number of UAVs]\n\n", (argc-1));
+		printf("Received %d args, expected 2 or more.\nExpected use:\t./min-lat <file path> [algorithm] [number of UAVs] [node density]\n\n", (argc-1));
 		return 1;
 	}
 
@@ -1011,9 +1012,14 @@ int main(int argc, char *argv[]) {
 		algorithm = atoi(argv[2]);
 		numUAVs = atoi(argv[3]);
 	}
+	else if(argc == 5) {
+		algorithm = atoi(argv[2]);
+		numUAVs = atoi(argv[3]);
+		density = atoi(argv[4]);
+	}
 
 	// Create the graph
 	Graph G(argv[1]);
 
-	solveGraph(&G, algorithm, numUAVs);
+	solveGraph(&G, algorithm, numUAVs, density);
 }

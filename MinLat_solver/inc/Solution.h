@@ -28,7 +28,7 @@ public:
 	Solution(const Solution &s);
 	~Solution();
 
-	void printResults(double compTime, bool printFile = false, int approach = 99);
+	void printResults(double compTime, bool printFile = false, int approach = 99, int nodeDensity=150);
 	void printPlan();
 	double GetWorstLatency();
 
