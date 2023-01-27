@@ -1,0 +1,19 @@
+ALG_COMBO_AN_CL_NI on plot_50_10
+Creating graph
+* Running Divide / Conquer / Arrange Solution *
+ SolClusters() : Solve with m = 1
+ *** Over budget!! ***
+ SolClusters() : Solve with m = 2
+ SolClusters() : Worst latency = 486.008223
+ SolClusters() : Solve with m = 3
+ SolClusters() : Worst latency = 362.411702
+ SolClusters() : Solve with m = 4
+ SolClusters() : Worst latency = 335.673341
+ SolClusters() : Solve with m = 5
+ SolClusters() : Worst latency = 477.907786
+ Final result: m = 4, worst-lat = 335.673341
+
+Total duration = 1014.847304
+Worst latency = 335.673341
+Comp Time = 0.114000
+Experiment2/alg_2.dat

@@ -10,7 +10,7 @@
 #pragma once
 
 #define DEBUG			0
-#define SANITY_PRINT	0
+#define SANITY_PRINT	1
 
 
 #define EPSILON			0.0001
@@ -35,9 +35,33 @@
 #define MAKE_PLAN_FILE		0
 #define PLAN_FILE_LOCATION	"drone_%d_%d.pln"
 
-#define MILP_I			1
-#define GREEDY_NN		2
-#define MILP_II			3
-#define CLUSTERING		4
-#define DIV_GREEDY		5
+/*
+ * Algorithm combos
+ *
+ * Select Hovering Locations:
+ * AN - above node only
+ * AC - all combos
+ *
+ * Algorithm:
+ * MILP - as advertised (I do not recommend)
+ * NN   - nearest neighbor algorithm
+ * CL   - clustering algorithm
+ * DG   - divide-greedy algorithm
+ *
+ * Post processing:
+ * I  - improve tour
+ * NI - do not improve tour
+ *
+ */
+#define ALG_COMBO_AC_MILP_I	0
+#define ALG_COMBO_AC_NN_I	1
+#define ALG_COMBO_AN_CL_NI	2
+#define ALG_COMBO_AN_CL_I	3
+#define ALG_COMBO_AN_DG_NI	4
+#define ALG_COMBO_AN_DG_I	5
+#define ALG_COMBO_AC_CL_NI	6
+#define ALG_COMBO_AC_CL_I	7
+#define ALG_COMBO_AC_DG_NI	8
+#define ALG_COMBO_AC_DG_I	9
+
 

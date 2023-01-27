@@ -10,7 +10,7 @@ Solution::Solution(const Solution &s) {
 Solution::~Solution() {}
 
 
-void Solution::printResults(double compTime, bool printFile, int approach) {
+void Solution::printResults(double compTime, bool printFile, int approach, int nodeDensity) {
 	if(DEBUG_SOL)
 		printf("\nFound tour:\n");
 	double total_duration = 0;
@@ -85,7 +85,8 @@ void Solution::printResults(double compTime, bool printFile, int approach) {
 		if(SANITY_PRINT)
 			printf("%s\n", buff);
 		pOutputFile = fopen(buff, "a");
-		fprintf(pOutputFile, "%ld %ld %f %f", m_pG->vNodeLst.size(), m_nV, total_duration, max_latency);
+		// Each line in data file is: number of nodes, number of UAVs, node density, total duration, max latency, computation time
+		fprintf(pOutputFile, "%ld %ld %d %f %f", m_pG->vNodeLst.size(), m_nV, nodeDensity, total_duration, max_latency);
 		fprintf(pOutputFile, " %.4f\n", compTime);
 		fclose(pOutputFile);
 	}
