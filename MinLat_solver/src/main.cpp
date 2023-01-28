@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <vector>
 #include <queue>
+
 #include <list>
 #include <chrono>
 
@@ -784,11 +785,11 @@ void improveRoute(Graph* G, Solution* solution) {
 	}
 }
 
-void printResults(Solution* solution, int nApproach, double duration_s, int nodeDensity) {
+void printResults(Solution* solution, int nApproach, double duration_s, int nodeDensity, std::string file_flag) {
 	assert(solution != NULL);
 
 	// Print Results
-	solution->printResults(duration_s, PRINT_RESULTS, nApproach, nodeDensity);
+	solution->printResults(duration_s, PRINT_RESULTS, nApproach, nodeDensity, file_flag);
 	if(MAKE_PLAN_FILE) {
 		// Create the autopilot plan file
 		solution->printPlan();
@@ -822,7 +823,6 @@ void printResults(Solution* solution, int nApproach, double duration_s, int node
 		// Grab first line from the original file
 		while(std::getline(file, line)) {
 			fprintf(pGraphFile, "%s\n", line.c_str());
-//			fprintf(pGraphFile, "\n");
 		}
 		std::getline(file, line);
 		fclose(pGraphFile);
@@ -831,7 +831,7 @@ void printResults(Solution* solution, int nApproach, double duration_s, int node
 	}
 }
 
-void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity) {
+void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::string file_flag) {
 	// Pointer to the solver
 	Solver *solver;
 
@@ -1008,7 +1008,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity) {
 	long long int duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 	// Runtime duration
 	double duration_s = (double)duration/1000.0;
-	printResults(solution, algorithm, duration_s, nodeDensity);
+	printResults(solution, algorithm, duration_s, nodeDensity, file_flag);
 
 	// Memory cleanup
 	delete solution;
@@ -1019,6 +1019,7 @@ int main(int argc, char *argv[]) {
 	int algorithm = ALG_COMBO_AC_NN_I;
 	int numUAVs = 2;
 	int density = 150;
+	std::string file_flag = "";
 
 	// Verify user input
 	if(argc < 2) {
@@ -1038,9 +1039,15 @@ int main(int argc, char *argv[]) {
 		numUAVs = atoi(argv[3]);
 		density = atoi(argv[4]);
 	}
+	else if(argc == 6) {
+		algorithm = atoi(argv[2]);
+		numUAVs = atoi(argv[3]);
+		density = atoi(argv[4]);
+		file_flag = std::string(argv[5]);
+	}
 
 	// Create the graph
 	Graph G(argv[1]);
 
-	solveGraph(&G, algorithm, numUAVs, density);
+	solveGraph(&G, algorithm, numUAVs, density, file_flag);
 }

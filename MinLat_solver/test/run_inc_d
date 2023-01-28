@@ -17,7 +17,7 @@ do
 		do
 			echo "Running ALG_COMBO_AN_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_NI on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 2 3 $n >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 2 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -31,7 +31,7 @@ do
 		do
 			echo "Running ALG_COMBO_AN_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_I on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 3 3 $n >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 3 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -43,7 +43,7 @@ do
 	do
 		echo "Running ALG_COMBO_AN_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_NI on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 4 3 $n >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 4 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -54,7 +54,7 @@ do
 	do
 		echo "Running ALG_COMBO_AN_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_I on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 5 3 $n >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 5 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -67,7 +67,7 @@ do
 		do
 			echo "Running ALG_COMBO_AC_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_NI on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 6 3 $n >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 6 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -81,7 +81,7 @@ do
 		do
 			echo "Running ALG_COMBO_AC_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_I on plot_${n}_$j" > Experiment1/run_output.txt
-			../build/min-lat "Experiment1/plot_${n}_$j.txt" 7 3 $n >> Experiment1/run_output.txt &
+			../build/min-lat "Experiment1/plot_${n}_$j.txt" 7 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 			wait
 		done
 	done
@@ -93,7 +93,7 @@ do
 	do
 		echo "Running ALG_COMBO_AC_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_NI on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 8 3 $n >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 8 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 		wait
 	done
 done
@@ -104,7 +104,7 @@ do
 	do
 		echo "Running ALG_COMBO_AC_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_I on plot_${n}_$j" > Experiment1/run_output.txt
-		../build/min-lat "Experiment1/plot_${n}_$j.txt" 9 3 $n >> Experiment1/run_output.txt &
+		../build/min-lat "Experiment1/plot_${n}_$j.txt" 9 3 $n "Results/inc_d/" >> Experiment1/run_output.txt &
 		wait
 	done
 done

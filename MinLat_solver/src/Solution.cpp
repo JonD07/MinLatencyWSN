@@ -10,7 +10,7 @@ Solution::Solution(const Solution &s) {
 Solution::~Solution() {}
 
 
-void Solution::printResults(double compTime, bool printFile, int approach, int nodeDensity) {
+void Solution::printResults(double compTime, bool printFile, int approach, int nodeDensity, std::string file_flag) {
 	if(DEBUG_SOL)
 		printf("\nFound tour:\n");
 	double total_duration = 0;
@@ -81,7 +81,7 @@ void Solution::printResults(double compTime, bool printFile, int approach, int n
 		// Print results to file
 		FILE * pOutputFile;
 		char buff[100];
-		sprintf(buff, DATA_LOG_LOCATION, approach);
+		sprintf(buff, DATA_LOG_LOCATION, file_flag.c_str(), approach);
 		if(SANITY_PRINT)
 			printf("%s\n", buff);
 		pOutputFile = fopen(buff, "a");

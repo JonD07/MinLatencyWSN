@@ -29,7 +29,7 @@
 #define BAT_SWAP		60
 
 #define PRINT_RESULTS		1
-#define DATA_LOG_LOCATION	"Experiment2/alg_%d.dat"
+#define DATA_LOG_LOCATION	"%salg_%d.dat"
 #define MAKE_PLOT_FILE		1
 #define PLOT_FILE_LOCATION	"output_path.txt"
 #define GRAPH_FILE_LOCATION	"output_graph.txt"
