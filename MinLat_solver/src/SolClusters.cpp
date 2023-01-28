@@ -198,14 +198,20 @@ void SolClusters::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 				runAgain = true;
 			}
 			else {
-				// No longer improving the solution
-				runAgain = false;
+				if(m%solution->m_nV == 0) {
+					// No longer improving the solution
+					runAgain = false;
+				}
 				// Memory cleanup
 				delete m_pSolution;
 			}
 
 			if(SANITY_PRINT)
 				printf(" SolClusters() : Worst latency = %f\n", worstLat);
+		}
+		else {
+			// Memory cleanup
+			delete m_pSolution;
 		}
 
 		// Verify we have not gone too far...
@@ -227,7 +233,7 @@ void SolClusters::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 
 	// Sanity print
 	if(SANITY_PRINT)
-		printf(" Final result: m = %d, worst-lat = %f\n\n", (m-1), bestWorstLat);
+		printf(" Final result: m = %ld, worst-lat = %f\n\n", pBestSolution->vTours.size(), bestWorstLat);
 
 	// Memory cleanup
 	delete pBestSolution;

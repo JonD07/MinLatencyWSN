@@ -26,7 +26,7 @@
 // UAV energy budget
 #define Q				D_VM/V_MAX
 // Battery swap time (in seconds)
-#define BAT_SWAP		90
+#define BAT_SWAP		60
 
 #define PRINT_RESULTS		1
 #define DATA_LOG_LOCATION	"Experiment2/alg_%d.dat"
