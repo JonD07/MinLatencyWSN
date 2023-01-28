@@ -3,6 +3,7 @@
 Graph::Graph(std::string graph_path) {
 	if(SANITY_PRINT)
 		printf("Creating graph\n");
+	sGFile = graph_path;
 	// Open file and read in data
 	std::ifstream file(graph_path);
 	std::string line;

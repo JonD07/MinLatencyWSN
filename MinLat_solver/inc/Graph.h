@@ -33,5 +33,6 @@ public:
 	// Base station node
 	// TODO: should the base station be Node or one of the waypoint classes?
 	Node mBaseStation;
+	std::string sGFile;
 private:
 };

@@ -807,6 +807,27 @@ void printResults(Solution* solution, int nApproach, double duration_s, int node
 			}
 		}
 		fclose(pOutputFile);
+
+		// Print found path to file TODO
+
+		// Open original graph file and read in data
+		std::ifstream file(solution->m_pG->sGFile);
+		std::string line;
+
+		if(DEBUG_MAIN)
+			printf("\nMaking Plot File\n");
+		// Create new graph file
+		FILE * pGraphFile;
+		pGraphFile = fopen(GRAPH_FILE_LOCATION, "w");
+		// Grab first line from the original file
+		while(std::getline(file, line)) {
+			fprintf(pGraphFile, "%s\n", line.c_str());
+//			fprintf(pGraphFile, "\n");
+		}
+		std::getline(file, line);
+		fclose(pGraphFile);
+
+
 	}
 }
 
