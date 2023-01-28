@@ -1,15 +1,15 @@
 #!/bin/bash
 
 set -e
-echo "Running MinLat Experiment 2: fixed v"
+echo "Running MinLat Experiment 2: Increasing N"
 
 # Default settings:
-# n = 50
+# n = 100
 # v = 3
 # d = 150
 
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
@@ -17,13 +17,13 @@ do
     	do
 		    echo "Running ALG_COMBO_AN_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_NI on plot_${n}_$j" > Experiment2/run_output.txt
-		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 2 4 >> Experiment2/run_output.txt &
+		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 2 3 >> Experiment2/run_output.txt &
 		    wait
         done
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
@@ -31,35 +31,35 @@ do
     	do
 		    echo "Running ALG_COMBO_AN_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AN_CL_I on plot_${n}_$j" > Experiment2/run_output.txt
-		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 3 4 >> Experiment2/run_output.txt &
+		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 3 3 >> Experiment2/run_output.txt &
 		    wait
         done
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
 	    echo "Running ALG_COMBO_AN_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_NI on plot_${n}_$j" > Experiment2/run_output.txt
-	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 4 4 >> Experiment2/run_output.txt &
+	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 4 3 >> Experiment2/run_output.txt &
 	    wait
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
 	    echo "Running ALG_COMBO_AN_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AN_DG_I on plot_${n}_$j" > Experiment2/run_output.txt
-	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 5 4 >> Experiment2/run_output.txt &
+	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 5 3 >> Experiment2/run_output.txt &
 	    wait
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
@@ -67,13 +67,13 @@ do
     	do
 		    echo "Running ALG_COMBO_AC_CL_NI on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_NI on plot_${n}_$j" > Experiment2/run_output.txt
-		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 6 4 >> Experiment2/run_output.txt &
+		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 6 3 >> Experiment2/run_output.txt &
 		    wait
         done
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
@@ -81,30 +81,30 @@ do
     	do
 		    echo "Running ALG_COMBO_AC_CL_I on plot_${n}_$j"
 			echo "ALG_COMBO_AC_CL_I on plot_${n}_$j" > Experiment2/run_output.txt
-		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 7 4 >> Experiment2/run_output.txt &
+		    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 7 3 >> Experiment2/run_output.txt &
 		    wait
         done
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do
 	    echo "Running ALG_COMBO_AC_DG_NI on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_NI on plot_${n}_$j" > Experiment2/run_output.txt
-	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 8 4 >> Experiment2/run_output.txt &
+	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 8 3 >> Experiment2/run_output.txt &
 	    wait
     done
 done
 
-for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100
+for n in 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 110 120 130 140 150 160 170 180 190 200
 do
     for j in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
     do 
 	    echo "Running ALG_COMBO_AC_DG_I on plot_${n}_$j"
 		echo "ALG_COMBO_AC_DG_I on plot_${n}_$j" > Experiment2/run_output.txt
-	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 9 4 >> Experiment2/run_output.txt &
+	    ../build/min-lat "Experiment2/plot_${n}_$j.txt" 9 3 >> Experiment2/run_output.txt &
 	    wait
     done
 done
