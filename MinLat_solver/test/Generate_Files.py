@@ -1,7 +1,7 @@
 import random
 import math
 
-INC_NODES = False
+INC_NODES = True
 INC_ALPHA = True
 
 # Parameters
@@ -10,19 +10,18 @@ R_MAX = 50
 R_MIN = 20
 # Increasing nodes
 START_COUNT = 5
-END_COUNT = 100
+END_COUNT = 200
 Node_Increment = 5
 ALPHA = 0.00015
 # Increasing alpha
-NUM_NODES = 50
-START_DENSE = 50
+NUM_NODES = 100
+START_DENSE = 30
 END_DENSE = 200
 DENSE_INC = 10
 
-FILE_PATH = "Experiment1/"
-
 # What increases?
 if INC_NODES:
+	FILE_PATH = "Experiment2/"
 	# Loop over the number of sensors to use (n)
 	for n in range(START_COUNT, (END_COUNT + Node_Increment), Node_Increment):
 		# Generate NUM_PLOTS plots
@@ -52,14 +51,16 @@ if INC_NODES:
 				file.write(f"{x_b} {y_b}\n")
 
 if INC_ALPHA:
+	FILE_PATH = "Experiment1/"
 	# Loop over the number of sensors to use (n)
 	for den in range(START_DENSE, (END_DENSE + DENSE_INC), DENSE_INC):
+		# Determine alpha
+		alpha = den/(1000**2)
+		# Find the max distance a sensor can from the origin
+		MAX_COORD = math.sqrt(NUM_NODES/alpha)
+		print(den, alpha, MAX_COORD)
 		# Generate NUM_PLOTS plots
 		for i in range(NUM_PLOTS):
-			# Determine alpha
-			alpha = den/(1000**2)
-			# Find the max distance a sensor can from the origin
-			MAX_COORD = math.sqrt(den/alpha)
 			# Open the file
 			file_name = f"{FILE_PATH}plot_{den}_{i}.txt"
 			with open(file_name, 'w') as file:
