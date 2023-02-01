@@ -43,7 +43,6 @@ add_executable(${CMAKE_PROJECT_NAME}
 	${sources}
 	src/Cluster.cpp
 	src/CluTSPDivision.cpp
-	src/SolDivideGreedy.cpp
 	src/Graph.cpp
 	src/Graph_Theory.cpp
 	src/HoverLocation.cpp
@@ -54,9 +53,12 @@ add_executable(${CMAKE_PROJECT_NAME}
 	src/Roots.cpp
 	src/SolBasicMILP.cpp
 	src/SolClusters.cpp
+	src/SolClustImp.cpp
+	src/SolDivideGreedy.cpp
 	src/SolHardMILP.cpp
 	src/SolNearestNeighbor.cpp
 	src/Solver.cpp
+	src/SolverAlgs.cpp
 	src/Solution.cpp
 	src/UAV_Stop.cpp
 	src/Utilities.cpp

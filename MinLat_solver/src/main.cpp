@@ -27,6 +27,7 @@
 #include "SolHardMILP.h"
 #include "SolClusters.h"
 #include "SolDivideGreedy.h"
+#include "SolClustImp.h"
 
 
 #define DEBUG_MAIN	DEBUG || 0
@@ -894,6 +895,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 
 		break;
 
+		// Presented algorithm:
 	case ALG_COMBO_AN_CL_I:
 		/// 1. Form list of potential hovering-locations
 		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
@@ -985,7 +987,6 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		break;
 
 	case ALG_COMBO_AC_DG_I:
-	default:
 		/// 1. Form list of potential hovering-locations
 		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
 		// Select hovering locations above the node only
@@ -1000,6 +1001,33 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 
 		/// 4. Improve route
 		improveRoute(G, solution);
+
+		break;
+
+	case ALG_COMBO_AN_CL_NI_SC:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolClustImp(false);
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		break;
+
+	case ALG_COMBO_AN_CL_I_SC:
+	default:
+		/// 1. Form list of potential hovering-locations
+		/// 2. Make neighborhood lists (sensors for each HL, HLs for each sensor)
+		// Select hovering locations above the node only
+		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
+
+		/// 3. Solve capacitated VRP
+		solver = new SolClustImp(true);
+		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
+
+		break;
 	}
 
 	// Capture end time

@@ -64,5 +64,7 @@
 #define ALG_COMBO_AC_CL_I	7
 #define ALG_COMBO_AC_DG_NI	8
 #define ALG_COMBO_AC_DG_I	9
+#define ALG_COMBO_AN_CL_NI_SC	10
+#define ALG_COMBO_AN_CL_I_SC	11
 
 

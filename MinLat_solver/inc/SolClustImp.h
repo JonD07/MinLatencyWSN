@@ -1,8 +1,8 @@
 /*
- * SolClusters.h
+ * SolClustImp.h
  *
- * Created by:	Peter Hall
- * On: 			10/5/2022
+ * Created by:	Jonathan Diller
+ * On: 			02/01/2023
  *
  * Description:
  */
@@ -26,13 +26,13 @@
 #include "Graph_Theory.h"
 
 
-#define DEBUG_SLCLUST	DEBUG || 0
+#define DEBUG_SLCLIMP	DEBUG || 0
 
 
-class SolClusters : public Solver {
+class SolClustImp : public Solver {
 public:
-	SolClusters();
-	SolClusters(const Solver &s);
+	SolClustImp(bool improvement);
+	SolClustImp(const Solver &s);
 
 protected:
 	// Run solver algorithm
@@ -53,11 +53,18 @@ private:
 
 	// Determine the cost of this tour
 	double tourCost(std::list<UAV_Stop> &tour);
+	// Improve the found tour
+	void improveRoute(std::vector<std::list<UAV_Stop>>& vTours);
+	// Determine the cost of the tour given in tour, a list of UAV stops
+	double tourDist(std::list<UAV_Stop> &tour);
+	// Find points where the two comms radii overlap
+	void findOverlapPoints(Node* v, Node* u, Roots* x_roots, Roots* y_roots);
 
 	Solution* m_pSolution;
 	std::vector<HoverLocation> m_vPotentialHL;
 	std::vector<std::list<int>> m_vSPerHL;
 	std::vector<std::list<int>> m_vHLPerS;
+	bool m_bRunImprovement;
 
 };
 
