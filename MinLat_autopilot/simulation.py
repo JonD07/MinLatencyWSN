@@ -2,7 +2,8 @@ import time
 import missions
 import commands
 from dronekit import connect, VehicleMode, LocationGlobalRelative
-
+import subprocess as sb
+import sys
 # 
 # To run the simulation, open a terminal in ardupilot/ArduCopter and run:
 # sim_vehicle.py -f quad -L CSM_SurveyField --console --map --osd
@@ -71,9 +72,46 @@ def start_next_mission(mission=None):
 	guided_and_arm()
 	state['mission'].start()
 
+def run_sim(iterations, start_seed):
+	for i in range(start_seed, start_seed + iterations):
+		missions.setSeed(i)
+		init()
+		start_next_mission(mission=missions.CollectWSNData())
+		print("Mission Normal Completed")
+		# init()
+		# start_next_mission(mission=missions.CollectWSNDataNaive())
+		# print("Mission 2 Completed")
+		init()
+		start_next_mission(mission=missions.CollectWSNDataNoSub())
+		print("Mission NOSUB Completed")
+
 
 if __name__ == '__main__':
+
+	#for i in range(start_seed, start_seed + iterations):
+	seed = int(sys.argv[1])
+	missions.setSeed(seed)
 	init()
-	# start_next_mission(mission=missions.CollectWSNData())
 	start_next_mission(mission=missions.CollectWSNData())
-	print("Done!!")
+	print("Mission Normal Completed")
+	# init()
+	# start_next_mission(mission=missions.CollectWSNDataNaive())
+	# print("Mission 2 Completed")
+	init()
+	start_next_mission(mission=missions.CollectWSNDataNoSub())
+	print("Mission NOSUB Completed")
+
+	sys.exit(0)
+
+	# sim_process = sb.Popen("/home/ardupilot/ArduCopter/sim_vehicle.py -f quad -L CSM_SurveyField --console --map --osd")
+	# control_thread = Thread(target = run_sim(0,20))
+
+
+	# while True:
+	# 	if control_thread.is_alive():
+	# 		pass
+	# 	else:
+	# 		print("Control thread failed. Starting new execution")
+	# 		sim_thread
+	
+	

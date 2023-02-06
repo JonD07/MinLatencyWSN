@@ -9,8 +9,8 @@
 
 #pragma once
 
-#define DEBUG			0
-#define SANITY_PRINT	0
+#define DEBUG			1
+#define SANITY_PRINT	1
 
 
 #define EPSILON			0.0001
@@ -32,7 +32,7 @@
 #define DATA_LOG_LOCATION	"Experiment2/alg_%d.dat"
 #define MAKE_PLOT_FILE		1
 #define PLOT_FILE_LOCATION	"output_path.txt"
-#define MAKE_PLAN_FILE		0
+#define MAKE_PLAN_FILE		1
 #define PLAN_FILE_LOCATION	"drone_%d_%d.pln"
 
 #define MILP_I			1
