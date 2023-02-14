@@ -22,6 +22,11 @@ def setSeed(vseed):
 	global seed
 	seed = vseed
 
+def setPath(vpath):
+	global path
+	path = vpath
+	commands.setPath(path)
+
 #Methods get the Drone number and the orbit set from text files on the drone in order to prevent
 #a lot of overhead when updating scripts.
 def getDroneNumber(drone_number = -1):
@@ -81,6 +86,7 @@ class Mission(object):
 	# Wrapper function for updating mission if not terminated
 	def update_wrapper(self):
 		self.command.init()
+		
 		while not self.terminate:
 			if vehicle.mode == VehicleMode('LAND'):
 				self.dispose()
@@ -188,7 +194,7 @@ class CollectWSNData(Mission):
 		# Add Timer-Start command
 		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open(defines.MISSION_PATH + "drone_0_0.pln","r+")
+		file1 = open(path + "drone_0_0.pln","r+")
 		# Node power-settings
 		self.nPowers = {-1: 0}
 		# Run through each command in list
@@ -258,10 +264,10 @@ class CollectWSNData(Mission):
 			print("Stopping Timer")
 			lapsed = self.end_time - self.start_time
 			print(lapsed)
-			f = open("flight-time.dat", "a")
+			f = open(path + "flight-time.dat", "a")
 			f.write("0 " + str(lapsed) + "\n")
 			f.close()
-			with open("data_collected.dat", "a") as dfile:
+			with open(path + "data_collected.dat", "a") as dfile:
 				dfile.write("0 " + str(commands.data_collected) + "\n")
 			print("Data Collected:", commands.data_collected)
 			commands.data_collected = 0
@@ -288,7 +294,7 @@ class CollectWSNDataNaive(Mission):
 		# Add Timer-Start command
 		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open(defines.MISSION_PATH + "drone_0_0.pln","r+")
+		file1 = open(path + "drone_0_0.pln","r+")
 		# Node power-settings
 		self.nPowers = {-1: 0}
 		# Run through each command in list
@@ -358,10 +364,10 @@ class CollectWSNDataNaive(Mission):
 			print("Stopping Timer")
 			lapsed = self.end_time - self.start_time
 			print(lapsed)
-			f = open("flight-time.dat", "a")
+			f = open(path + "flight-time.dat", "a")
 			f.write("1 " + str(lapsed) + "\n")
 			f.close()
-			with open("data_collected.dat", "a") as dfile:
+			with open(path + "data_collected.dat", "a") as dfile:
 				dfile.write("1 " + str(commands.data_collected) + "\n")
 			print("Data Collected:", commands.data_collected)
 			commands.data_collected = 0
@@ -388,7 +394,7 @@ class CollectWSNDataLKH(Mission):
 		# Add Timer-Start command
 		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open(defines.MISSION_PATH + "drone_0_0.pln","r+")
+		file1 = open(path + "drone_0_0.pln","r+")
 		# Node power-settings
 		self.nPowers = {-1: 0}
 		# Run through each command in list
@@ -445,8 +451,7 @@ class CollectWSNDataLKH(Mission):
 						print("Added move-collect command")
 						n = self.missed_q.pop()
 						hpp_points_id.append(n)
-
-						file1 = open(defines.MISSION_PATH + "node_info.txt","r+")
+						file1 = open(path + "node_info.txt","r+")
 						for aline in file1:
 							values = aline.split()
 							if int(values[0]) == n:
@@ -481,10 +486,10 @@ class CollectWSNDataLKH(Mission):
 			print("Stopping Timer")
 			lapsed = self.end_time - self.start_time
 			print(lapsed)
-			f = open("flight-time.dat", "a")
+			f = open(path + "flight-time.dat", "a")
 			f.write("2 " + str(lapsed) + "\n")
 			f.close()
-			with open("data_collected.dat", "a") as dfile:
+			with open(path + "data_collected.dat", "a") as dfile:
 				dfile.write("2 " + str(commands.data_collected) + "\n")
 			print("Data Collected:", commands.data_collected)
 			commands.data_collected = 0
@@ -574,7 +579,7 @@ class CollectWSNDataNoSub(Mission):
 		# Add Timer-Start command
 		self.q.append(commands.StartTimer())
 		# Get list of commands from file
-		file1 = open(defines.MISSION_PATH + "drone_0_0.pln","r+")
+		file1 = open(path + "drone_0_0.pln","r+")
 		# Node power-settings
 		self.nPowers = {-1: 0}
 		# Run through each command in list
@@ -644,11 +649,11 @@ class CollectWSNDataNoSub(Mission):
 			print("Stopping Timer")
 			lapsed = self.end_time - self.start_time
 			print(lapsed)
-			f = open("flight-time.dat", "a")
+			f = open(path + "flight-time.dat", "a")
 			f.write("3 " + str(lapsed) + "\n")
 			f.close()
-
-			with open("data_collected.dat", "a") as dfile:
+			
+			with open(path + "data_collected.dat", "a") as dfile:
 				dfile.write("3 " + str(commands.data_collected) + "\n")
 			print("Data Collected:", commands.data_collected)
 			commands.data_collected = 0

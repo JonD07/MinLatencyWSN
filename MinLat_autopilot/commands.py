@@ -22,6 +22,10 @@ def pass_vehicle(passed_vehicle):
 	global vehicle
 	vehicle = passed_vehicle
 
+def setPath(mpath):
+	global path
+	path = mpath
+
 def get_xy():
 	return [vehicle.location.local_frame.east, vehicle.location.local_frame.north]
 
@@ -180,7 +184,7 @@ class CollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open( defines.MISSION_PATH + "node_info.txt","r+")
+		file1 = open( path + "node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -265,7 +269,7 @@ class MoveAndCollectData(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open(defines.MISSION_PATH + "node_info.txt","r+")
+		file1 = open(path + "node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:
@@ -368,7 +372,7 @@ class MoveAndCollectDataNaive(Command):
 		self.node_hostname = None
 		self.node_collect_time = None
 		# Find data about this node
-		file1 = open(defines.MISSION_PATH + "node_info.txt","r+")
+		file1 = open(path + "node_info.txt","r+")
 		for aline in file1:
 			values = aline.split()
 			if int(values[0]) == self.node_ID:

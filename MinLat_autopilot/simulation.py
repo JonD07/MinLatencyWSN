@@ -90,16 +90,26 @@ if __name__ == '__main__':
 
 	#for i in range(start_seed, start_seed + iterations):
 	seed = int(sys.argv[1])
+	path = sys.argv[2]
 	missions.setSeed(seed)
+	missions.setPath(path)
 	init()
-	start_next_mission(mission=missions.CollectWSNData())
-	print("Mission Normal Completed")
-	# init()
-	# start_next_mission(mission=missions.CollectWSNDataNaive())
-	# print("Mission 2 Completed")
-	init()
-	start_next_mission(mission=missions.CollectWSNDataNoSub())
-	print("Mission NOSUB Completed")
+	mission_num = int(sys.argv[3])
+	if(mission_num == 0):
+		start_next_mission(mission=missions.CollectWSNData())
+		print("Mission Normal Completed")
+
+	elif(mission_num == 1):
+		start_next_mission(mission=missions.CollectWSNDataNaive())
+		print("Mission Normal Completed")
+
+	elif(mission_num == 2):
+		start_next_mission(mission=missions.CollectWSNDataLKH())
+		print("Mission LKH Completed")
+		
+	elif(mission_num == 3):
+		start_next_mission(mission=missions.CollectWSNDataNoSub())
+		print("Mission NOSUB Completed")
 
 	sys.exit(0)
 
