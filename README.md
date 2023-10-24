@@ -27,7 +27,10 @@ Clone this repository
 `git clone https://github.com/JonD07/MinLatencyWSN.git`
 
 ### Build solver
-Create a new directory from the root directory of the solver to run build commands
+
+We use cmake to build the MinLat-Solver. Cmake uses the `FindGUROBI.cmake` file to find the Gurobi solver library and link it with our solver during the build. You may need to update what Gurobi version you are using in `FindGUROBI.cmake`, specifically on the line that says something like "NAMES gurobi gurobi95". For any Gurobi version 10.0x, this line should be changed to "NAMES gurobi gurobi100". 
+
+Create a new directory from the root directory of the solver to run build commands:
 
 `cd MinLatencyWSN/MinLat_solver`
 
