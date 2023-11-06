@@ -11,6 +11,7 @@
 class SolBasicMILP: public Solver{
 public:
     SolBasicMILP();
+    SolBasicMILP(double budget);
 
     SolBasicMILP(const Solver &s);
 

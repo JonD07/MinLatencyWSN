@@ -2,6 +2,7 @@
 
 
 SolHardMILP::SolHardMILP() {}
+SolHardMILP::SolHardMILP(double budget): Solver(budget) {}
 
 SolHardMILP::SolHardMILP(const Solver &s): Solver(s) {}
 
@@ -340,7 +341,7 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 						// Plus cost to get to j from i
 						expr += vPotentialHL.at(i).edgeCost(vPotentialHL.at(j)) * X[i][j][k][v];
 						// Big-M, cancel-out expression if X == 0
-						expr += Q*(1 - X[i][j][k][v]);
+						expr += Q*budget*(1 - X[i][j][k][v]);
 						// Minus budget at j on k
 						expr -= Z[j][k][v];
 
@@ -364,7 +365,7 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 						// Plus cost to get to j from i
 						expr += vPotentialHL.at(i).edgeCost(vPotentialHL.at(j)) * X[i][j][k][v];
 						// Big-M, cancel-out expression if X == 0
-						expr -= Q*(1 - X[i][j][k][v]);
+						expr -= Q*budget*(1 - X[i][j][k][v]);
 						// Minus budget at j on k
 						expr -= Z[j][k][v];
 
@@ -381,7 +382,7 @@ void SolHardMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 					GRBLinExpr expr = Z[i][k][v];
 					// Sum across all edges going into i
 					for(unsigned long int j = 0; j < N; j++) {
-						expr -= Q*X[j][i][k][v];
+						expr -= Q*budget*X[j][i][k][v];
 					}
 
 					model.addConstr(expr <= 0, "Z_"+itos(i)+"_"+itos(k)+"_"+itos(v)+"_leq_X_*_"+itos(i)+"_"+itos(k)+"_"+itos(v));

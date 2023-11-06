@@ -33,7 +33,7 @@
 #define MAKE_PLOT_FILE		1
 #define PLOT_FILE_LOCATION	"output_path.txt"
 #define GRAPH_FILE_LOCATION	"output_graph.txt"
-#define MAKE_PLAN_FILE		0
+#define MAKE_PLAN_FILE		1
 #define PLAN_FILE_LOCATION	"drone_%d_%d.pln"
 
 /*

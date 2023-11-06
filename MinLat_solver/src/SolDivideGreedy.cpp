@@ -2,6 +2,7 @@
 
 
 SolDivideGreedy::SolDivideGreedy() {}
+SolDivideGreedy::SolDivideGreedy(double budget): Solver(budget) {}
 SolDivideGreedy::SolDivideGreedy(const Solver &s): Solver(s) {}
 
 void SolDivideGreedy::solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL,
@@ -143,7 +144,7 @@ void SolDivideGreedy::solve(Solution* solution, std::vector<HoverLocation> &vPot
 				tour.push_back(lastStop);
 
 				// Check energy consumption of tour
-				double budget = 0;
+				double budget_cap = 0;
 				std::list<UAV_Stop>::iterator lst, nxt;
 				lst = tour.begin();
 				nxt = tour.begin();
@@ -152,10 +153,10 @@ void SolDivideGreedy::solve(Solution* solution, std::vector<HoverLocation> &vPot
 				// Run through the tour, add up pst for each leg + HL stop
 				while(nxt != tour.end()) {
 					// Add time to move from lst to nxt
-					budget += lst -> edgeCost(*nxt);
+					budget_cap += lst -> edgeCost(*nxt);
 					// Add in time to talk to each sensor at nxt
 					for(int s : nxt->nodes) {
-						budget += solution->m_pG->vNodeLst.at(s).sensorCost(*nxt) ;
+						budget_cap += solution->m_pG->vNodeLst.at(s).sensorCost(*nxt) ;
 					}
 
 					// Advance iterators
@@ -163,10 +164,10 @@ void SolDivideGreedy::solve(Solution* solution, std::vector<HoverLocation> &vPot
 					nxt++;
 				}
 				if(DEBUG_DIV_GREED)
-					printf(" New budget: %f\n", budget);
+					printf(" New budget: %f\n", budget_cap);
 
 				// If good ...
-				if(budget <= Q) {
+				if(budget_cap <= Q*budget) {
 					if(DEBUG_DIV_GREED)
 						printf(" Add to tour!\n");
 					// Mark sensors

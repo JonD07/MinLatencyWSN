@@ -22,6 +22,7 @@
 class SolHardMILP : public Solver{
 public:
 	SolHardMILP();
+	SolHardMILP(double budget);
 	SolHardMILP(const Solver &s);
 
 protected:

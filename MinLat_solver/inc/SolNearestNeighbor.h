@@ -10,6 +10,7 @@ class SolNearestNeighbor : public Solver {
 public:
 
 	SolNearestNeighbor();
+	SolNearestNeighbor(double budget);
 	SolNearestNeighbor(const Solver &s);
 
 protected:

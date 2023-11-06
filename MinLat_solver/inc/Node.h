@@ -18,7 +18,7 @@ class Node {
 public:
 	// TODO: Do we need an empty constructor?
 	Node();
-	Node(int id, double x, double y, double r);
+	Node(int id, double x, double y, double r, double b);
 	Node(const Node &n);
 	~Node();
 
@@ -48,6 +48,6 @@ public:
 
 private:
 	int nID;
-	double fX, fY, fR;
+	double fX, fY, fR, budget;
 	bool bLocked;
 };

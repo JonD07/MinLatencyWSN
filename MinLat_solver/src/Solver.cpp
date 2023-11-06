@@ -4,7 +4,11 @@
 Solver::Solver() {}
 
 Solver::Solver(const Solver &s) {
+	budget = s.budget;
 
+}
+Solver::Solver(double b) {
+	budget = b;
 }
 
 Solver::~Solver(){}

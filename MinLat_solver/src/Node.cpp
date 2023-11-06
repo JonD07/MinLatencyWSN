@@ -2,14 +2,16 @@
 
 Node::Node() : nID(-1), fX(0), fY(0), fR(0), bLocked(false) {}
 
-Node::Node(int id, double x, double y, double r) : nID(id), fX(x), fY(y), fR(r), bLocked(false) {}
+Node::Node(int id, double x, double y, double r, double b) : nID(id), fX(x), fY(y), fR(r), budget(b), bLocked(false){}
 
 Node::Node(const Node &n) {
 	nID = n.nID;
 	fX = n.fX;
 	fY = n.fY;
 	fR = n.fR;
+	budget = n.budget;
 	bLocked = n.bLocked;
+	
 }
 
 Node::~Node() {}
@@ -34,7 +36,7 @@ double Node::GetDistanceTo(Node* n) {
 // Budget cost to collect data from this node: t * s_m/s_h,
 // which is [ t * (total time moving at V_MAX)/(total hovering time) ]
 double Node::sensorCost(Location &i) {
-	return sensorTime(i)*((Q) / (HOVER_TIME));
+	return sensorTime(i)*((Q*budget) / (HOVER_TIME));
 }
 
 // Actual hovering time, in seconds

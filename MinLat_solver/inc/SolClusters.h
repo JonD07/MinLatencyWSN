@@ -32,6 +32,7 @@
 class SolClusters : public Solver {
 public:
 	SolClusters();
+	SolClusters(double budget);
 	SolClusters(const Solver &s);
 
 protected:

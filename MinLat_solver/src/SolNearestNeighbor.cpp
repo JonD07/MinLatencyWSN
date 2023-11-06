@@ -3,6 +3,7 @@
 
 SolNearestNeighbor::SolNearestNeighbor() {}
 SolNearestNeighbor::SolNearestNeighbor(const Solver &s): Solver(s) {}
+SolNearestNeighbor::SolNearestNeighbor(double budget):Solver(budget) {}
 
 void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL,
 		std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS) {
@@ -92,7 +93,7 @@ void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &v
 				tour.push_back(lastStop);
 
 				// Check energy consumption of tour
-				double budget = 0;
+				double budget_cap = 0;
 				std::list<UAV_Stop>::iterator lst, nxt;
 				lst = tour.begin();
 				nxt = tour.begin();
@@ -101,10 +102,10 @@ void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &v
 				// Run through the tour, add up pst for each leg + HL stop
 				while(nxt != tour.end()) {
 					// Add time to move from lst to nxt
-					budget += lst -> edgeCost(*nxt);
+					budget_cap += lst -> edgeCost(*nxt);
 					// Add in time to talk to each sensor at nxt
 					for(int s : nxt->nodes) {
-						budget += solution->m_pG->vNodeLst.at(s).sensorCost(*nxt) ;
+						budget_cap += solution->m_pG->vNodeLst.at(s).sensorCost(*nxt) ;
 					}
 
 					// Advance iterators
@@ -114,7 +115,7 @@ void SolNearestNeighbor::solve(Solution* solution, std::vector<HoverLocation> &v
 	//				printf(" New budget: %f\n", budget);
 
 				// If good ...
-				if(budget <= Q) {
+				if(budget_cap <= Q*budget) {
 	//					printf(" Add to tour!\n");
 					// Mark sensors
 					for(int l : vSPerHL.at(bstIt->nID)) {

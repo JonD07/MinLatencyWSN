@@ -31,13 +31,16 @@
 class Solver {
 public:
 	Solver();
+	Solver(double b);
 	Solver(const Solver &s);
 	virtual ~Solver();
 
 	// Runs the underlying algorithm
 	Solution* RunSolver(Graph* pG, int nV, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS);
+	double budget;
 
 protected:
 	virtual void solve(Solution* solution, std::vector<HoverLocation> &vPotentialHL, std::vector<std::list<int>> &vSPerHL, std::vector<std::list<int>> &vHLPerS) = 0;
+	
 };
 

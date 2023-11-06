@@ -32,6 +32,7 @@
 class SolClustImp : public Solver {
 public:
 	SolClustImp(bool improvement);
+	SolClustImp(bool improvement, double budget);
 	SolClustImp(const Solver &s);
 
 protected:

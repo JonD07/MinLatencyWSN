@@ -12,6 +12,7 @@
  */
 
 SolClusters::SolClusters() {}
+SolClusters::SolClusters(double budget): Solver(budget) {}
 
 SolClusters::SolClusters(const Solver &s): Solver(s) {}
 
@@ -173,7 +174,7 @@ void SolClusters::solve(Solution* solution, std::vector<HoverLocation> &vPotenti
 		// Verify that the cost of each tour is less than our energy budget
 		bool underBudget = true;
 		for(std::list<UAV_Stop> tour : m_pSolution->vTours) {
-			if(tourCost(tour) > Q) {
+			if(tourCost(tour) > Q*budget) {
 				underBudget = false;
 				if(SANITY_PRINT)
 					printf(" *** Over budget!! ***\n");

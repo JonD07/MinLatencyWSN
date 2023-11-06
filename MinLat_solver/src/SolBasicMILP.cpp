@@ -2,6 +2,7 @@
 
 
 SolBasicMILP::SolBasicMILP() {}
+SolBasicMILP::SolBasicMILP(double budget): Solver(budget) {}
 
 SolBasicMILP::SolBasicMILP(const Solver &s): Solver(s) {}
 
@@ -63,7 +64,7 @@ void SolBasicMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotent
 		for(unsigned long int k = 0; k < M; k++) {
 			Z[k] = new GRBVar[N];
 			for(unsigned long int i = 0; i < N; i++) {
-				Z[k][i] = model.addVar(0.0, Q, 0.0, GRB_CONTINUOUS, "Z_"+itos(k)+"_"+itos(i));
+				Z[k][i] = model.addVar(0.0, Q*budget, 0.0, GRB_CONTINUOUS, "Z_"+itos(k)+"_"+itos(i));
 			}
 		}
 
@@ -96,7 +97,7 @@ void SolBasicMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotent
 					// Plus cost to get to j from i
 					expr += vPotentialHL.at(i).edgeCost(vPotentialHL.at(j)) * X[k][i][j];
 					// Big-M, cancel-out expression if X == 0
-					expr -= Q*(1 - X[k][i][j]);
+					expr -= Q*budget*(1 - X[k][i][j]);
 					// Minus budget at j on k
 					expr -= Z[k][j];
 
@@ -118,7 +119,7 @@ void SolBasicMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotent
 					// Plus cost to get to j from i
 					expr +=vPotentialHL.at(i).edgeCost(vPotentialHL.at(j)) * X[k][i][j];
 					// Big-M, cancel-out expression if X == 0
-					expr += Q*(1 - X[k][i][j]);
+					expr += Q*budget*(1 - X[k][i][j]);
 					// Minus budget at j on k
 					expr -= Z[k][j];
 
@@ -133,7 +134,7 @@ void SolBasicMILP::solve(Solution* solution, std::vector<HoverLocation> &vPotent
 				GRBLinExpr expr = 0;
 				// Sum across all edges going into i
 				for(unsigned long int j = 0; j < N; j++) {
-					expr += Q*X[k][j][i];
+					expr += Q*budget*X[k][j][i];
 				}
 				// Subtract the budget at i
 				expr -= Z[k][i];

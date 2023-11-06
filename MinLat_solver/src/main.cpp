@@ -832,7 +832,7 @@ void printResults(Solution* solution, int nApproach, double duration_s, int node
 	}
 }
 
-void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::string file_flag) {
+void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::string file_flag, double budget) {
 	// Pointer to the solver
 	Solver *solver;
 
@@ -856,7 +856,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolHardMILP();
+		solver = new SolHardMILP(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -872,7 +872,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		// Select hovering locations
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 		/// 3. Solve capacitated VRP
-		solver = new SolNearestNeighbor();
+		solver = new SolNearestNeighbor(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -890,7 +890,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClusters();
+		solver = new SolClusters(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -903,7 +903,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClusters();
+		solver = new SolClusters(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -921,7 +921,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolDivideGreedy();
+		solver = new SolDivideGreedy(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -933,7 +933,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolDivideGreedy();
+		solver = new SolDivideGreedy(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -951,7 +951,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClusters();
+		solver = new SolClusters(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -963,7 +963,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClusters();
+		solver = new SolClusters(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -981,7 +981,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolDivideGreedy();
+		solver = new SolDivideGreedy(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -993,7 +993,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAllCombos(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolDivideGreedy();
+		solver = new SolDivideGreedy(budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		// Print Results before improvements
@@ -1011,7 +1011,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClustImp(false);
+		solver = new SolClustImp(false, budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -1024,7 +1024,7 @@ void solveGraph(Graph* G, int algorithm, int numUAVs, int nodeDensity, std::stri
 		setHLAboveNodes(G, vPotentialHL, vSPerHL, vHLPerS);
 
 		/// 3. Solve capacitated VRP
-		solver = new SolClustImp(true);
+		solver = new SolClustImp(true, budget);
 		solution = solver->RunSolver(G, numUAVs, vPotentialHL, vSPerHL, vHLPerS);
 
 		break;
@@ -1050,32 +1050,33 @@ int main(int argc, char *argv[]) {
 	std::string file_flag = "";
 
 	// Verify user input
-	if(argc < 2) {
-		printf("Received %d args, expected 2 or more.\nExpected use:\t./min-lat <file path> [algorithm] [number of UAVs] [node density]\n\n", (argc-1));
+	if(argc < 3) {
+		printf("Received %d args, expected 3 or more.\nExpected use:\t./min-lat <file path> <energy budget> [algorithm] [number of UAVs] [node density]\n\n", (argc-1));
 		return 1;
 	}
 
-	if(argc == 3) {
-		algorithm = atoi(argv[2]);
-	}
-	else if(argc == 4) {
-		algorithm = atoi(argv[2]);
-		numUAVs = atoi(argv[3]);
+	if(argc == 4) {
+		algorithm = atoi(argv[3]);
 	}
 	else if(argc == 5) {
-		algorithm = atoi(argv[2]);
-		numUAVs = atoi(argv[3]);
-		density = atoi(argv[4]);
+		algorithm = atoi(argv[3]);
+		numUAVs = atoi(argv[4]);
 	}
 	else if(argc == 6) {
-		algorithm = atoi(argv[2]);
-		numUAVs = atoi(argv[3]);
-		density = atoi(argv[4]);
-		file_flag = std::string(argv[5]);
+		algorithm = atoi(argv[3]);
+		numUAVs = atoi(argv[4]);
+		density = atoi(argv[5]);
+	}
+	else if(argc == 7) {
+		algorithm = atoi(argv[3]);
+		numUAVs = atoi(argv[4]);
+		density = atoi(argv[5]);
+		file_flag = std::string(argv[6]);
 	}
 
-	// Create the graph
-	Graph G(argv[1]);
 
-	solveGraph(&G, algorithm, numUAVs, density, file_flag);
+	// Create the graph
+	Graph G(argv[1], atof(argv[2]));
+
+	solveGraph(&G, algorithm, numUAVs, density, file_flag, atof(argv[2]));
 }

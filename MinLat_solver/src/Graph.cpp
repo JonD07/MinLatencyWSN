@@ -1,6 +1,6 @@
 #include "Graph.h"
 
-Graph::Graph(std::string graph_path) {
+Graph::Graph(std::string graph_path, double budget) {
 	if(SANITY_PRINT)
 		printf("Creating graph\n");
 	sGFile = graph_path;
@@ -25,7 +25,7 @@ Graph::Graph(std::string graph_path) {
 		lineStream >> x >> y >> r;
 		if(DEBUG)
 			printf(" (%f, %f), R: %f\n", x, y, r);
-		vNodeLst.push_back(Node(i,x,y,r));
+		vNodeLst.push_back(Node(i,x,y,r, budget));
 	}
 
 	// get the location of the base station
@@ -34,7 +34,7 @@ Graph::Graph(std::string graph_path) {
 	// Parse line
 	double x,y;
 	lineStream >> x >> y;
-	mBaseStation = Node(n, x, y, 0);
+	mBaseStation = Node(n, x, y, 0, budget);
 	if(DEBUG)
 		printf(" bs: (%f, %f)\n |nodesLst| = %ld\n", mBaseStation.getX(), mBaseStation.getY(), vNodeLst.size());
 }

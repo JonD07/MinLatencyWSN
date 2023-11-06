@@ -18,7 +18,7 @@
 
 class Graph {
 public:
-	Graph(std::string graph_path);
+	Graph(std::string graph_path, double budget);
 	~Graph();
 
 	// Marks node id

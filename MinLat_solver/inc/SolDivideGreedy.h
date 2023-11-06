@@ -17,6 +17,7 @@ class SolDivideGreedy : public Solver {
 public:
 
 	SolDivideGreedy();
+	SolDivideGreedy(double budget);
 	SolDivideGreedy(const Solver &s);
 
 protected:
