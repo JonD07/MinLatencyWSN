@@ -16,6 +16,12 @@ Go to http://webhotel4.ruc.dk/~keld/research/LKH-3/, download latest version
 Build the executable, then move it to 
 `~/bin`
 
+Note: copy the LKH executable, NOT the LKH directory.
+
+```
+cp LKH-<VERSION>/LKH ~/bin
+```
+
 Add the following line to your .bashrc file:
 
 `export PATH="/home/$USER/bin:$PATH"`
@@ -54,5 +60,100 @@ Move into test folder
 
 Run sar-solver executable
 
-`../build/min-lat`
+`../build/min-lat <testfile name> <energy budget> [algorithm] [number of UAVs] [node density]`
+
+### Arguments
+
+- Input File: 
+
+    The test file defines the nodes to visit and the base station. These files are formatted as follows.
+
+    ```
+    [Number of Nodes]
+    [Node X] [Node Y] [Connection Radius] [???] #I don't know what the 1's are??
+    .
+    .
+    .
+    [Base Station X] [Base Station Y]
+    ```
+- Energy Budget:
+
+    The Energy budget defines the percentage of the total theoretical energy capacity of the UAVs. This total theoretical energy capacity is defined in `inc/defines.h` as `Q`. The Energy budget should be a floating point number between 0 and 1 (although budgets larger than 1 should still work).
+
+- Algorithm:
+
+    The Algorithm parameter defines which algorithm (and combination of algorithms) the solver uses to find the solution. Shown below are the available algorithms. Default of 1.
+
+    | Alg Code      | Alg Number |
+    | :----:        |    :----:   |
+    | ALG_COMBO_AC_MILP_I |	0 |
+    | ALG_COMBO_AC_NN_I	| 1 |
+    | ALG_COMBO_AN_CL_NI | 2 |
+    | ALG_COMBO_AN_CL_I	| 3 |
+    | ALG_COMBO_AN_DG_NI |	4 |
+    | ALG_COMBO_AN_DG_I	| 5 |
+    | ALG_COMBO_AC_CL_NI | 6 |
+    | ALG_COMBO_AC_CL_I	| 7 |
+    | ALG_COMBO_AC_DG_NI | 8 |
+    | ALG_COMBO_AC_DG_I	| 9 |
+    | ALG_COMBO_AN_CL_NI_SC | 10 |
+    | ALG_COMBO_AN_CL_I_SC | 11 |
+
+    The algorithm codes follow the following format.
+
+    * Select Hovering Locations:
+        * AN - above node only
+        * AC - all combos
+
+    * Algorithm:
+        * MILP - as advertised (not recommended)
+        * NN   - nearest neighbor algorithm
+        * CL   - clustering algorithm
+        * DG   - divide-greedy algorithm
+
+    * Post processing:
+        * I  - improve tour
+        * NI - do not improve tour
+
+- Number of UAVs:
+
+    The number of UAVs available for the algorithm. Default of 2.
+
+- Node Density:
+    
+    The density of the nodes. Default is 150. I'm unsure how this is calculated.
+
+
+
+## Output
+
+In `inc/defines.h` there are several parameters to set what output the program should produce. 
+
+### Print Results
+
+This parameter produces a file that logs metadata from each run. The log file by default is stored in `alg_<algorithm>.dat`. Each line of the log file represents a single run of the algorithm, and is formatted as follows.
+number of nodes, number of UAVs, node density, total duration, max latency, computation time
+```
+[Nodes] [UAVs] [Density] [Total Duration] [Max Latency] [Computation Time]
+```
+
+### Make Plot file
+
+This parameter produces two files, by defaule `output_path.txt` and `output_graph.txt`.
+
+`output_path.txt` defines the coordinates of the path all UAVs should take formatted as a coordinate pair. This file does not differentiate between UAVs and prints them as a single path.
+
+`output_graph.txt` defines the input graph. This is effectively the same as the input file. It is formatted as follows.
+
+```
+[Number of Nodes]
+[Node X] [Node Y] [Connection Radius] [???] #I don't know what the 1's are??
+.
+.
+.
+[Base Station X] [Base Station Y]
+```
+
+### Make Plan File
+This parameter produces one or more `drone_[UAV Number]_[Route Number].pln` files. These are route files designed to work with the [DroNS-3 Repository](https://github.com/pervasive-computing-systems-group/DroNS3). Additional information on how these files are formatted can be found there.
 
